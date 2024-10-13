@@ -8,6 +8,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../enums/tkm_wallet_enum_type_transaction.dart';
 import '../enums/tkm_wallet_enums_api.dart';
 import '../models/api/tkm_wallet_balance.dart';
+import '../models/api/tkm_wallet_blockchain_settings.dart';
+import '../models/api/tkm_wallet_currencies_change.dart';
+import '../models/api/tkm_wallet_currency.dart';
 import '../models/api/tkm_wallet_staking_node.dart';
 import '../models/api/tkm_wallet_transaction_response.dart';
 import '../models/api/tkm_wallet_transaction_result.dart';
@@ -25,6 +28,7 @@ class TkmWalletService {
   TkmWalletService({required TkmWalletEnumEnvironments currentEnv}) {
     _clientApi = TkmWalletClientApi(currentEnv: TkmWalletEnumEnvironments.test, dicClient: Dio());
   }
+
   // Creates a new wallet and saves it to SharedPreferences
   static Future<TkmWalletWrap> createWallet({required String walletName, required String password }) async {
     // Retrieve all existing wallets from storage
@@ -124,6 +128,7 @@ class TkmWalletService {
 
   // Adds a new address (wallet) to an existing wallet by its index
   static Future<void> addAddressToWallet({required TkmWalletWrap walletName, required int index}) async {
+    // Retrieve all wallets from SharedPreferences
     List<TkmWalletWrap> wallets = await getWallets();
 
     // Find the wallet by its name
@@ -138,6 +143,7 @@ class TkmWalletService {
 
   // Retrieves a specific wallet by its name
   static Future<TkmWalletWrap> getWalletByName({required String walletName}) async {
+    // Retrieve all wallets from SharedPreferences
     List<TkmWalletWrap> wallets = await getWallets();
 
     // Find and return the wallet by its name, or throw an exception if not found
@@ -149,31 +155,65 @@ class TkmWalletService {
 
   // Calls the API to retrieve a list of staking nodes
   static Future<List<TkmWalletStakingNode>> callApiGetNodeList() async {
+    // Request the list of staking nodes from the API
     var result = await _clientApi.getStakingNodeList();
     return result;
   }
 
   // Calls the API to retrieve a list of transactions based on the address and transaction type
-  static Future<List<TkmWalletTransaction>> callApiGetTransactionList({required String address, required TkmWalletEnumTypeTransaction typeTransaction, int pageIndex = 0, int numberItemsForPage = 200}) async {
-    var result = await _clientApi.getTransactionList(typeTransaction: typeTransaction, pageIndex: pageIndex, numberItemsForPage: numberItemsForPage, address: address);
+  static Future<List<TkmWalletTransaction>> callApiGetTransactionList({
+    required String address,
+    required TkmWalletEnumTypeTransaction typeTransaction,
+    int pageIndex = 0,
+    int numberItemsForPage = 200}) async {
+    // Request the list of transactions from the API based on parameters
+    var result = await _clientApi.getTransactionList(
+        typeTransaction: typeTransaction,
+        pageIndex: pageIndex,
+        numberItemsForPage: numberItemsForPage,
+        address: address);
     return result;
   }
 
   // Calls the API to retrieve a node's Qtesla address based on its short address
   static Future<String?> callApiRetriveNodeQteslaAddress({required String shortAddressNode}) async {
+    // Request the Qtesla address of the node from the API
     var result = await _clientApi.retriveNodeQteslaAddress(shortAddressNode: shortAddressNode);
     return result;
   }
 
   // Calls the API to retrieve the balance of a specific address
   static Future<TkmWalletBalance?> callApiGetBalance({required String address}) async {
+    // Request the wallet balance from the API
     var result = await _clientApi.getBalance(address: address);
     return result;
   }
 
   // Calls the API to send a transaction
   static Future<TkmTransactionTransactionResult> callApiSendingTransaction({required TransactionInput transactionSend}) async {
+    // Send the transaction via the API and retrieve the result
     var result = await _clientApi.sendingTransaction(transactionSend: transactionSend);
+    return result;
+  }
+
+  // Calls the API to retrieve a list of supported currencies
+  static Future<List<TkmWalletCurrency>> callApiGetCurrencyList() async {
+    // Request the currency list from the API
+    var result = await _clientApi.getCurrencyList();
+    return result;
+  }
+
+  // Calls the API to retrieve blockchain settings
+  static Future<TkmWalletBlockchainSettings?> callApiGetSettingsBlockchain() async {
+    // Request blockchain settings from the API
+    var result = await _clientApi.getSettingsBlockchain();
+    return result;
+  }
+
+  // Calls the API to retrieve the exchange rates for currencies
+  static Future<TkmWalletCurrenciesChange?> getCurrenciesExchangeRate() async {
+    // Request the exchange rates from the API
+    var result = await _clientApi.getCurrenciesExchangeRate();
     return result;
   }
 }
