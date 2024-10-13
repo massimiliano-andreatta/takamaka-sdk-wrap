@@ -25,7 +25,7 @@ class TkmWalletService {
     _clientApi = TkmWalletClientApi(currentEnv: TkmWalletEnumEnvironments.test, dicClient: Dio());
   }
   // Creates a new wallet and saves it to SharedPreferences
-  static Future<TkmWalletWrap> createWallet(String walletName, String password) async {
+  static Future<TkmWalletWrap> createWallet({required String walletName, required String password }) async {
     // Retrieve all existing wallets from storage
     List<TkmWalletWrap> wallets = await getWallets();
 
@@ -41,9 +41,6 @@ class TkmWalletService {
 
     // Initialize the wallet (generating seed words if necessary)
     await wallet.initializeWallet();
-
-    // Save the new wallet to shared preferences for persistence
-    await saveWallet(wallet);
 
     // Return the newly created wallet object
     return wallet;
@@ -70,7 +67,7 @@ class TkmWalletService {
   }
 
   // Saves or updates a wallet in SharedPreferences
-  static Future<void> saveWallet(TkmWalletWrap wallet) async {
+  static Future<void> saveWallet({required TkmWalletWrap wallet}) async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
 
     // Retrieve the current list of wallets from storage
@@ -102,7 +99,7 @@ class TkmWalletService {
   }
 
   // Deletes a wallet by its name from SharedPreferences
-  static Future<void> deleteWallet(String walletName) async {
+  static Future<void> deleteWallet({required String walletName}) async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
 
     // Retrieve the current list of wallets from storage
@@ -125,7 +122,7 @@ class TkmWalletService {
   }
 
   // Adds a new address (wallet) to an existing wallet by its index
-  static Future<void> addAddressToWallet(TkmWalletWrap walletName, int index) async {
+  static Future<void> addAddressToWallet({required TkmWalletWrap walletName, required int index}) async {
     List<TkmWalletWrap> wallets = await getWallets();
 
     // Find the wallet by its name
@@ -136,13 +133,10 @@ class TkmWalletService {
 
     // Add a new address to the wallet at the given index
     await wallet.addAddress(index);
-
-    // Save the updated wallet back to SharedPreferences
-    await saveWallet(wallet);
   }
 
   // Retrieves a specific wallet by its name
-  static Future<TkmWalletWrap> getWalletByName(String walletName) async {
+  static Future<TkmWalletWrap> getWalletByName({required String walletName}) async {
     List<TkmWalletWrap> wallets = await getWallets();
 
     // Find and return the wallet by its name, or throw an exception if not found
