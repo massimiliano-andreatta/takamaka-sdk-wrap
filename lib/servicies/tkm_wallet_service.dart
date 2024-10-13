@@ -211,7 +211,7 @@ class TkmWalletService {
   }
 
   // Calls the API to retrieve the exchange rates for currencies
-  static Future<TkmWalletCurrenciesChange?> getCurrenciesExchangeRate() async {
+  static Future<TkmWalletCurrenciesChange?> callApiGetCurrenciesExchangeRate() async {
     // Request the exchange rates from the API
     var result = await _clientApi.getCurrenciesExchangeRate();
     return result;
