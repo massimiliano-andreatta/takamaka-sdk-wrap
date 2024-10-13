@@ -1,144 +1,201 @@
 
-# TkmWalletService
+# TAKAMAKA Dart SDK - Example Usage
 
-`TkmWalletService` is a Dart package that simplifies the management of wallets and transactions on the TAKAMAKA blockchain. The service allows you to create, save, retrieve wallets, and perform various types of transactions, including sending payments (TKG/TKR) and handling staking operations.
-
-## Features
-
-- **Wallet Management:** Create, save, and load wallets using shared preferences.
-- **Transaction Types:** Send payments, stake tokens, and undo stake transactions.
-- **API Integration:** Interact with the TAKAMAKA blockchain API for transaction handling.
+This repository contains examples of how to use the `TkmWalletService` in Dart to interact with the Takamaka blockchain. The following are the essential steps to create wallets, handle transactions, and manage staking.
 
 ## Getting Started
 
-### Installation
-
-To use this package, add it to your `pubspec.yaml` file:
+To include the **Takamaka SDK** in your Dart or Flutter project, add the following to your `pubspec.yaml` file:
 
 ```yaml
 dependencies:
-  tkm_wallet_service: latest_version
+  takamaka_sdk_wrap:
+    git:
+      url: https://massimiliano_andreatta@bitbucket.org/massimiliano_andreatta/takamaka-sdk-wrap.git
+      ref: main
 ```
 
-Then, run `flutter pub get` to install the package.
+Then, retrieve the package using:
 
-### Initialization
+```bash
+flutter pub get
+```
 
-To initialize the service, you need to specify the environment (either `test` or `production`):
+### Initialize the Wallet Service
+
+You can initialize the Takamaka wallet service for either the test or production environment:
 
 ```dart
 TkmWalletService(currentEnv: TkmWalletEnumEnvironments.test);
 ```
 
-### Wallet Management
+## Blockchain Settings and Currency Information
 
-#### Retrieve Saved Wallets
+### Retrieve Blockchain Settings
 
-You can retrieve the wallets stored in shared preferences as follows:
+To get the current blockchain settings:
+
+```dart
+var settingsBlockchain = TkmWalletService.callApiGetSettingsBlockchain();
+```
+
+### Get Available Currency List
+
+To get the list of supported currencies on the Takamaka blockchain:
+
+```dart
+var currencyList = TkmWalletService.callApiGetCurrencyList();
+```
+
+### Retrieve Exchange Rates
+
+To retrieve the current exchange rates of the available currencies:
+
+```dart
+var currenciesExchangeRate = TkmWalletService.callApiGetCurrenciesExchangeRate();
+```
+
+## Wallet Management
+
+### Retrieve Existing Wallets
+
+To retrieve saved wallets from shared preferences:
 
 ```dart
 var wallets = await TkmWalletService.getWallets();
-
-TkmWalletWrap wallet;
-if (wallets.isNotEmpty) {
-  wallet = wallets.first;
-} else {
-  // Create a new wallet if none exist
-  wallet = await TkmWalletService.createWallet(walletName: 'myWallet', password: 'myPassword');
-
-  // Get the 25 recovery words for the wallet
-  List<String> wordsWalletRecovery = wallet.generatedWordsInitWallet;
-
-  // Save the wallet
-  await TkmWalletService.saveWallet(wallet: wallet);
-}
 ```
 
-#### Manage Wallet Addresses
+### Create a New Wallet
 
-- **Get the main wallet address:**
+If there are no existing wallets, you can create a new one:
+
+```dart
+var wallet = await TkmWalletService.createWallet(walletName: 'myWallet', password: 'myPassword');
+List<String> wordsWalletRecovery = wallet.generatedWordsInitWallet; // 25 recovery words
+await TkmWalletService.saveWallet(wallet: wallet);
+```
+
+### Get Wallet Addresses
+
+The first address in the wallet is the main address:
 
 ```dart
 var addressMain = wallet.addresses.first;
 ```
 
-- **Add a new wallet address:**
+You can add new addresses to the wallet:
 
 ```dart
 var addressOther = wallet.addAddress(1);
+await TkmWalletService.saveWallet(wallet: wallet); // Don't forget to save changes
 ```
 
-- **Save changes to the wallet:**
+## Transaction Management
+
+### Retrieve Transaction List
+
+To retrieve a list of transactions for a specific address, you can use:
 
 ```dart
-await TkmWalletService.saveWallet(wallet: wallet);
+List<TkmWalletTransaction> transactionList = await TkmWalletService.callApiGetTransactionList(
+    address: addressMain.address, 
+    typeTransaction: TkmWalletEnumTypeTransaction.pay
+);
 ```
 
-### Transactions
+### Retrieve Wallet Balance
 
-#### PAY Transactions
+To check the balance of a specific address:
 
-You can send TAKAMAKA tokens (`TKG` or `TKR`) using the following methods:
+```dart
+var walletBalance = TkmWalletService.callApiGetBalance(address: addressMain.address);
+```
 
-- **Sending TKG:**
+### PAY Transactions
+
+#### Send TKG (Green Token)
+
+To create and send a PAY transaction with TKG:
 
 ```dart
 var valueGreen = TKmTK.unitStringTK("1.20");
-var transactionPay_TKG = await addressMain.createTransactionPayTkg(to: addressMain.address, bigIntValue: valueGreen, message: "test");
+var transactionPay_TKG = await addressMain.createTransactionPayTkg(
+    to: addressMain.address, 
+    bigIntValue: valueGreen, 
+    message: "test"
+);
 
-// Verify transaction integrity
 var transaction = await addressMain.verifyTransactionIntegrity(transactionPay_TKG);
-
-// Prepare and send the transaction
 var transactionSend = await addressMain.prepareTransactionForSend(transactionPay_TKG);
 var resultPaySend = await TkmWalletService.callApiSendingTransaction(transactionSend: transactionSend);
 ```
 
-- **Sending TKR:**
+#### Send TKR (Red Token)
+
+Similarly, to create and send a PAY transaction with TKR:
 
 ```dart
 var valueRed = TKmTK.unitStringTK("1.20");
-var transactionPay_TKR = await addressMain.createTransactionPayTkr(to: addressMain.address, bigIntValue: valueRed, message: "test");
+var transactionPay_TKR = await addressMain.createTransactionPayTkr(
+    to: addressMain.address, 
+    bigIntValue: valueRed, 
+    message: "test"
+);
 
-// Verify transaction integrity
-transaction = await addressMain.verifyTransactionIntegrity(transactionPay_TKR);
-
-// Prepare and send the transaction
-transactionSend = await addressMain.prepareTransactionForSend(transactionPay_TKR);
-resultPaySend = await TkmWalletService.callApiSendingTransaction(transactionSend: transactionSend);
+var transaction = await addressMain.verifyTransactionIntegrity(transactionPay_TKR);
+var transactionSend = await addressMain.prepareTransactionForSend(transactionPay_TKR);
+var resultPaySend = await TkmWalletService.callApiSendingTransaction(transactionSend: transactionSend);
 ```
 
-#### STAKE Transactions
+## Staking
 
-- **Stake Tokens:**
+### Retrieve Node List for Staking
+
+To retrieve the list of nodes available for staking:
 
 ```dart
 var listNode = await TkmWalletService.callApiGetNodeList();
+```
+
+### Retrieve QTESLA Address of a Node
+
+To retrieve the QTESLA address for staking on a specific node:
+
+```dart
 var shortAddressNode = listNode[0].shortAddress ?? "";
 var resultRetriveQtesla = await TkmWalletService.callApiRetriveNodeQteslaAddress(shortAddressNode: shortAddressNode);
+```
 
-if (resultRetriveQtesla != null) {
+### Stake TKG on a Node
+
+If a QTESLA address is available, you can create a stake transaction:
+
+```dart
+if (resultRetriveQtesla != null || !resultRetriveQtesla!.isEmpty) {
   var valueStake = TKmTK.unitStringTK("200");
-  var transactionStake = await addressMain.createTransactionStakeAdd(qteslaAddress: resultRetriveQtesla, bigIntValue: valueStake, message: "Stake");
+  var transactionStake = await addressMain.createTransactionStakeAdd(
+      qteslaAddress: resultRetriveQtesla, 
+      bigIntValue: valueStake, 
+      message: "Stake"
+  );
 
-  // Verify transaction integrity
-  transaction = await addressMain.verifyTransactionIntegrity(transactionStake);
-
-  // Prepare and send the transaction
-  transactionSend = await addressMain.prepareTransactionForSend(transactionStake);
-  resultPaySend = await TkmWalletService.callApiSendingTransaction(transactionSend: transactionSend);
+  var transaction = await addressMain.verifyTransactionIntegrity(transactionStake);
+  var transactionSend = await addressMain.prepareTransactionForSend(transactionStake);
+  var resultPaySend = await TkmWalletService.callApiSendingTransaction(transactionSend: transactionSend);
 }
 ```
 
-- **Undo Stake:**
+### Undo Stake
+
+To undo all stakes made previously:
 
 ```dart
 var transactionStakeUndo = await addressMain.createTransactionStakeUndo();
-transaction = await addressMain.verifyTransactionIntegrity(transactionStakeUndo);
-transactionSend = await addressMain.prepareTransactionForSend(transactionStakeUndo);
-resultPaySend = await TkmWalletService.callApiSendingTransaction(transactionSend: transactionSend);
+var transaction = await addressMain.verifyTransactionIntegrity(transactionStakeUndo);
+var transactionSend = await addressMain.prepareTransactionForSend(transactionStakeUndo);
+var resultPaySend = await TkmWalletService.callApiSendingTransaction(transactionSend: transactionSend);
 ```
 
-### License
+---
 
-This package is available under the MIT License.
+This `README.md` provides detailed instructions on integrating the Takamaka Dart SDK into your project, managing wallets, transactions, and staking. Be sure to check the SDK documentation for additional features and best practices.
