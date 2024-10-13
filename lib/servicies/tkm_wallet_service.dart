@@ -7,8 +7,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../enums/tkm_wallet_enum_type_transaction.dart';
 import '../enums/tkm_wallet_enums_api.dart';
+import '../models/api/tkm_wallet_balance.dart';
 import '../models/api/tkm_wallet_staking_node.dart';
-import '../models/api/tkm_wallet_transaction.dart';
+import '../models/api/tkm_wallet_transaction_response.dart';
 import '../models/api/tkm_wallet_transaction_result.dart';
 import '../models/tkm_wallet_exceptions.dart';
 import '../models/tkm_wallet_wrap.dart';
@@ -165,7 +166,7 @@ class TkmWalletService {
   }
 
   // Calls the API to retrieve the balance of a specific address
-  static Future<String?> callApiGetBalance({required String address}) async {
+  static Future<TkmWalletBalance?> callApiGetBalance({required String address}) async {
     var result = await _clientApi.getBalance(address: address);
     return result;
   }

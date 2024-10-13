@@ -5,9 +5,10 @@ import 'package:io_takamaka_core_wallet/io_takamaka_core_wallet.dart';
 
 import '../enums/tkm_wallet_enum_type_transaction.dart';
 import '../enums/tkm_wallet_enums_api.dart';
+import '../models/api/tkm_wallet_balance.dart';
 import '../models/api/tkm_wallet_list_node_response.dart';
 import '../models/api/tkm_wallet_staking_node.dart';
-import '../models/api/tkm_wallet_transaction.dart';
+import '../models/api/tkm_wallet_transaction_response.dart';
 import '../models/api/tkm_wallet_transaction_result.dart';
 
 class TransactionResult {
@@ -152,7 +153,7 @@ class TkmWalletClientApi {
 
   }
 
-  Future<String?> getBalance({required String address}) async {
+  Future<TkmWalletBalance?> getBalance({required String address}) async {
     var enuEndpoint = TkmWalletEnumApiEndpoints.getBalance;
     var urlCall = _currentEnv.getFullApiUrl(enuEndpoint);
     var methodCall = _currentEnv.getHttpMethod(enuEndpoint);
@@ -170,7 +171,7 @@ class TkmWalletClientApi {
       if (response.statusCode == 200) {
         var responseData = response.data;
         if (responseData) {
-          return responseData;
+          return TkmWalletBalance.fromJson(responseData);
         }
       }
 
