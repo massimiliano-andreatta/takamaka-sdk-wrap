@@ -25,7 +25,7 @@ class TkmWalletWrap {
   TkmWalletWrap(this._walletName, this._password);
 
   // Constructor that accepts seed and pre-existing wallet objects
-  TkmWalletWrap.withSeedAndWallets(this._walletName, this._seed, List<TkmWalletAddress> addresses) {
+  TkmWalletWrap.withNameSeedAndAddresses(this._walletName, this._seed, List<TkmWalletAddress> addresses) {
     _addresses.addAll(addresses); // Add the passed wallets to the list
   }
 
@@ -84,7 +84,7 @@ class TkmWalletWrap {
   }
 
   // Method to add a new wallet address based on a given index
-  Future<void> addAddress(int index) async {
+  Future<TkmWalletAddress?> addAddress(int index) async {
     // Ensure the seed is available
     if (_seed != null) {
       // Index 0 is reserved, throw an exception if trying to use it
@@ -101,10 +101,14 @@ class TkmWalletWrap {
       }
 
       // Create and initialize a new wallet with the provided index
-      var addressMain = TkmWalletAddress(_seed!, index, _walletName);
-      await addressMain.initialize(); // Initialize the wallet
-      _addresses.add(addressMain);      // Add the new wallet to the list
+      var address = TkmWalletAddress(_seed!, index, _walletName);
+      await address.initialize(); // Initialize the wallet
+      _addresses.add(address);      // Add the new wallet to the list
+
+      return address;
     }
+
+    return null;
   }
 
   // Method to convert the wallet wrapper object into a JSON format
@@ -128,7 +132,7 @@ class TkmWalletWrap {
     );
 
     // Return the constructed wallet wrapper object
-    return TkmWalletWrap.withSeedAndWallets(
+    return TkmWalletWrap.withNameSeedAndAddresses(
       json['walletName'],
       json['seed'],
       addresses,
