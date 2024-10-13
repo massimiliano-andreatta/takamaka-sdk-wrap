@@ -1,5 +1,8 @@
+library takamaka_sdk_wrap;
+
 import 'package:io_takamaka_core_wallet/io_takamaka_core_wallet.dart';
-import 'package:takamaka_sdk_wrap/models/api/tkm_wallet_api_endpoint.dart';
+
+import '../models/api/tkm_wallet_api_endpoint.dart';
 
 enum TkmWalletEnumApiEndpoints {
   login,

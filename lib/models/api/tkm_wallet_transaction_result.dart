@@ -1,3 +1,5 @@
+library takamaka_sdk_wrap;
+
 class TkmTransactionTransactionResult {
   final bool success;
   final String message;

@@ -1,3 +1,5 @@
+library takamaka_sdk_wrap;
+
 import 'package:io_takamaka_core_wallet/io_takamaka_core_wallet.dart';
 
 class TkmWalletApiEndpoint {

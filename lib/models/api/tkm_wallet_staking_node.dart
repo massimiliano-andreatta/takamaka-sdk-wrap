@@ -1,3 +1,5 @@
+library takamaka_sdk_wrap;
+
 class TkmWalletStakingNode {
   int? activeStake;
   String? address;

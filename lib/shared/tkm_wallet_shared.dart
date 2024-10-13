@@ -1,7 +1,8 @@
 import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:takamaka_sdk_wrap/models/tkm_wallet_wrap.dart';
+
+import '../models/tkm_wallet_wrap.dart';
 
 class TkmWalletShared {
   // Saves a wallet object to shared preferences

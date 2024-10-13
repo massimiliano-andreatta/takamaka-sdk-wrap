@@ -1,6 +1,9 @@
+library takamaka_sdk_wrap;
+
 import 'package:io_takamaka_core_wallet/io_takamaka_core_wallet.dart';
-import 'package:takamaka_sdk_wrap/models/tkm_wallet_address.dart';
-import 'package:takamaka_sdk_wrap/models/tkm_wallet_exceptions.dart';
+
+import 'tkm_wallet_address.dart';
+import 'tkm_wallet_exceptions.dart';
 
 class TkmWalletWrap {
   // Constants for wallet file extension and path

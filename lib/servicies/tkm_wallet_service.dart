@@ -1,16 +1,19 @@
-import 'dart:convert';
+library takamaka_sdk_wrap;
 
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:io_takamaka_core_wallet/io_takamaka_core_wallet.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:takamaka_sdk_wrap/enums/tkm_wallet_enum_type_transaction.dart';
-import 'package:takamaka_sdk_wrap/enums/tkm_wallet_enums_api.dart';
-import 'package:takamaka_sdk_wrap/models/api/tkm_wallet_staking_node.dart';
-import 'package:takamaka_sdk_wrap/models/api/tkm_wallet_transaction.dart';
-import 'package:takamaka_sdk_wrap/models/api/tkm_wallet_transaction_result.dart';
-import 'package:takamaka_sdk_wrap/models/tkm_wallet_exceptions.dart';
-import 'package:takamaka_sdk_wrap/models/tkm_wallet_wrap.dart';
-import 'package:takamaka_sdk_wrap/servicies/tkm_wallet_client_api.dart';
+
+import '../enums/tkm_wallet_enum_type_transaction.dart';
+import '../enums/tkm_wallet_enums_api.dart';
+import '../models/api/tkm_wallet_staking_node.dart';
+import '../models/api/tkm_wallet_transaction.dart';
+import '../models/api/tkm_wallet_transaction_result.dart';
+import '../models/tkm_wallet_exceptions.dart';
+import '../models/tkm_wallet_wrap.dart';
+import 'tkm_wallet_client_api.dart';
+
 
 class TkmWalletService {
   static const String _walletKey = 'wallets';

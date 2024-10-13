@@ -1,4 +1,6 @@
-import 'package:takamaka_sdk_wrap/models/api/tkm_wallet_staking_node.dart';
+library takamaka_sdk_wrap;
+
+import 'tkm_wallet_staking_node.dart';
 
 class TkmWalletListNodeResponse {
   String? dateUpdate;

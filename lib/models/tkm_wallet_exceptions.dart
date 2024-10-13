@@ -1,3 +1,5 @@
+library takamaka_sdk_wrap;
+
 // Exception thrown when a requested wallet is not found
 class WalletNotFoundException implements Exception {
   final String message;

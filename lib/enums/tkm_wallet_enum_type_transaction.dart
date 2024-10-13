@@ -1,3 +1,5 @@
+library takamaka_sdk_wrap;
+
 enum TkmWalletEnumTypeTransaction {
   all('ALL'),
   pay('PAY'),

@@ -1,7 +1,3 @@
 library takamaka_sdk_wrap;
 
-/// A Calculator.
-class Calculator {
-  /// Returns [value] plus 1.
-  int addOne(int value) => value + 1;
-}
+export 'servicies/tkm_wallet_service.dart';

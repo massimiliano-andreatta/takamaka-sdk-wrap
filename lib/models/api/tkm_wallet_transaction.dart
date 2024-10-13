@@ -1,3 +1,5 @@
+library takamaka_sdk_wrap;
+
 class TkmWalletTransaction {
   String? sITH;
   int? epoch;

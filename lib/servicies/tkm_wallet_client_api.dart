@@ -1,11 +1,14 @@
+library takamaka_sdk_wrap;
+
 import 'package:dio/dio.dart';
 import 'package:io_takamaka_core_wallet/io_takamaka_core_wallet.dart';
-import 'package:takamaka_sdk_wrap/enums/tkm_wallet_enum_type_transaction.dart';
-import 'package:takamaka_sdk_wrap/enums/tkm_wallet_enums_api.dart';
-import 'package:takamaka_sdk_wrap/models/api/tkm_wallet_list_node_response.dart';
-import 'package:takamaka_sdk_wrap/models/api/tkm_wallet_staking_node.dart';
-import 'package:takamaka_sdk_wrap/models/api/tkm_wallet_transaction.dart';
-import 'package:takamaka_sdk_wrap/models/api/tkm_wallet_transaction_result.dart';
+
+import '../enums/tkm_wallet_enum_type_transaction.dart';
+import '../enums/tkm_wallet_enums_api.dart';
+import '../models/api/tkm_wallet_list_node_response.dart';
+import '../models/api/tkm_wallet_staking_node.dart';
+import '../models/api/tkm_wallet_transaction.dart';
+import '../models/api/tkm_wallet_transaction_result.dart';
 
 class TransactionResult {
   final bool success;
