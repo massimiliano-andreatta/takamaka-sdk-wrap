@@ -38,11 +38,11 @@ flutter pub get
 - [x] Undo Stake
 - [x] Send TKG (Green Token)
 - [x] Send TKR (Red Token)
-- [ ] Send Blob File
-- [ ] Send Blob Hash
-- [ ] Send Blob Text
+- [x] Send Blob File
+- [x] Send Blob Hash
+- [x] Send Blob Text
 - [ ] Generate QRCODE recive token (TKG/TKR)
-- [ ] Search Transactions
+- [x] Search Transactions
 - [ ] Login User
 - [ ] Get info User
 - [ ] Get list address user sync

@@ -107,7 +107,7 @@ class TkmWalletAddress {
       'name': _name,
       'walletName': _walletName,
       'favorite': _favorite, // Include the favorite flag in JSON
-      'visible': _visible,   // Include the visibility flag in JSON
+      'visible': _visible, // Include the visibility flag in JSON
     };
   }
 
@@ -121,7 +121,7 @@ class TkmWalletAddress {
 
     // Restore the "favorite" and "visible" flags from the JSON
     walletObj._favorite = json['favorite'] ?? false; // Set the "favorite" status from JSON
-    walletObj._visible = json['visible'] ?? true;    // Set the visibility from JSON
+    walletObj._visible = json['visible'] ?? true; // Set the visibility from JSON
     walletObj._name = json['name'] ?? "Address ${json['index']}";
 
     // Asynchronously initialize the wallet
@@ -169,13 +169,29 @@ class TkmWalletAddress {
   /// Creates a transaction with the hash of a file
   Future<TransactionBean> createTransactionBlobHash({required File file}) async {
     try {
-      final bytes = await file.readAsBytes();
+      Uint8List bytes = file.readAsBytesSync();
       final sha3Digest = SHA3Digest(256);
       final hash = sha3Digest.process(Uint8List.fromList(bytes));
       final b64UrlHash = base64UrlEncode(hash);
 
       final transactionTime = TKmTK.getTransactionTime();
       final itb = BuilderItb.blob(_address, b64UrlHash, transactionTime);
+
+      return await _createGenericTransaction(itb);
+    } catch (e) {
+      /// Handling errors during file reading or hashing
+      print("Error creating transaction with file hash: $e");
+      rethrow;
+    }
+  }
+
+  Future<TransactionBean> createTransactionBlobFile({required File file, required List<String> tags}) async {
+    try {
+      var tkmMetaData = await MetadataUtils.collectMetadata(file, tags);
+      String message = jsonEncode(tkmMetaData.toJson());
+
+      final transactionTime = TKmTK.getTransactionTime();
+      final itb = BuilderItb.blob(_address, message, transactionTime);
 
       return await _createGenericTransaction(itb);
     } catch (e) {
