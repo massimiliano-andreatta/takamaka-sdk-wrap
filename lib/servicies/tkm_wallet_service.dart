@@ -285,4 +285,31 @@ class TkmWalletService {
     var result = await _clientApi.getChangeCurrency();
     return result;
   }
+
+  /// Calls the API to send a transaction
+  ///
+  /// This static method interacts with the external API to send a transaction
+  /// represented by the given TransactionInput. It is designed to be used
+  /// asynchronously and returns a Future that resolves to the result of the
+  /// transaction send operation.
+  ///
+  /// Parameters:
+  /// - [transactionSend]: An instance of TransactionInput containing the details
+  ///   of the transaction to be sent.
+  ///
+  /// Returns:
+  /// A Future that resolves to an instance of TkmTransactionTransactionResult,
+  /// which contains the result of the transaction send operation.
+  static Future<TkmTransactionTransactionResult> callApiSendingTransaction({required TransactionInput transactionSend}) async {
+    // Send the transaction via the API and retrieve the result
+    // This uses the _clientApi instance to call the sendingTransaction method,
+    // passing the transactionSend parameter. This method handles the actual API call.
+    var result = await _clientApi.sendingTransaction(transactionSend: transactionSend);
+
+    // Return the result of the API call
+    // The result will include information such as transaction status,
+    // transaction ID, and any error messages that may have occurred during the send operation.
+    return result;
+  }
+
 }
