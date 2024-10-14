@@ -1,5 +1,8 @@
 library takamaka_sdk_wrap;
 
+import 'dart:convert';
+
+import 'package:crypto/crypto.dart';
 import 'package:io_takamaka_core_wallet/io_takamaka_core_wallet.dart';
 
 import 'tkm_wallet_address.dart';
@@ -13,6 +16,8 @@ class TkmWalletWrap {
   // Variables for wallet name and password
   late final String _walletName;
   late final String? _password;
+
+  late final String? _hash;
 
   // Seed and a list to store generated seed words before wallet initialization
   String? _seed;
@@ -37,6 +42,10 @@ class TkmWalletWrap {
   // Getter for the wallet name
   String get walletName {
     return _walletName;
+  }
+
+  String? get hash {
+    return _hash;
   }
 
   // Getter for wallets that are visible
@@ -75,7 +84,10 @@ class TkmWalletWrap {
     // If the wallet is successfully created, initialize the main wallet object
     if (wallet != null) {
       _seed = wallet['seed'];
+
       if (_seed != null) {
+        _hash = md5.convert(utf8.encode(_seed!)).toString();
+
         var addressMain = TkmWalletAddress(_seed!, 0, _walletName);
         addressMain.initialize(); // Initialize the wallet
         _addresses.add(addressMain); // Add the wallet to the list
