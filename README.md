@@ -36,7 +36,7 @@ TkmWalletService(currentEnv: TkmWalletEnumEnvironments.test);
 To get the current blockchain settings:
 
 ```dart
-var settingsBlockchain = TkmWalletService.callApiGetSettingsBlockchain();
+var settingsBlockchain = await TkmWalletService.callApiGetSettingsBlockchain();
 ```
 
 ### Get Available Currency List
@@ -44,7 +44,7 @@ var settingsBlockchain = TkmWalletService.callApiGetSettingsBlockchain();
 To get the list of supported currencies on the Takamaka blockchain:
 
 ```dart
-var currencyList = TkmWalletService.callApiGetCurrencyList();
+var currencyList = await TkmWalletService.callApiGetCurrencyList();
 ```
 
 ### Retrieve Exchange Rates
@@ -52,7 +52,7 @@ var currencyList = TkmWalletService.callApiGetCurrencyList();
 To retrieve the current exchange rates of the available currencies:
 
 ```dart
-var currenciesExchangeRate = TkmWalletService.callApiGetCurrenciesExchangeRate();
+var currenciesExchangeRate = await TkmWalletService.callApiGetCurrenciesExchangeRate();
 ```
 
 ## Wallet Management
