@@ -315,4 +315,11 @@ class TkmWalletService {
     var result = await _clientApi.getCurrencyList();
     return result;
   }
+
+  // Calls the API to retrieve a node's Qtesla address based on its short address
+  static Future<String?> callApiRetriveNodeQteslaAddress({required String shortAddressNode}) async {
+    // Request the Qtesla address of the node from the API
+    var result = await _clientApi.retriveNodeQteslaAddress(shortAddressNode: shortAddressNode);
+    return result;
+  }
 }
