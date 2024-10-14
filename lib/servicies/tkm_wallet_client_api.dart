@@ -295,7 +295,7 @@ class TkmWalletClientApi {
   ///
   /// Returns a list of currencies if successful; otherwise, returns an empty list.
   Future<List<TkmWalletCurrency>> getCurrencyList() async {
-    var enuEndpoint = TkmWalletEnumApiEndpoints.getBalance;
+    var enuEndpoint = TkmWalletEnumApiEndpoints.getCurrencyList;
 
     /// Endpoint to get the currency list.
     var urlCall = _currentEnv.getFullApiUrl(enuEndpoint);
@@ -340,7 +340,7 @@ class TkmWalletClientApi {
   ///
   /// Returns the blockchain settings if successful; otherwise, returns null.
   Future<TkmWalletBlockchainSettings?> getBlockchainSettings() async {
-    var enuEndpoint = TkmWalletEnumApiEndpoints.getBalance;
+    var enuEndpoint = TkmWalletEnumApiEndpoints.getBlockchainSettings;
 
     /// Endpoint to get the blockchain settings.
     var urlCall = _currentEnv.getFullApiUrl(enuEndpoint);
@@ -384,7 +384,7 @@ class TkmWalletClientApi {
   ///
   /// Returns the exchange rates if successful; otherwise, returns null.
   Future<TkmWalletCurrenciesChange?> getChangeCurrency() async {
-    var enuEndpoint = TkmWalletEnumApiEndpoints.getCurrenciesChange;
+    var enuEndpoint = TkmWalletEnumApiEndpoints.getChangeCurrency;
 
     /// Endpoint to get the exchange rates.
     var urlCall = _currentEnv.getFullApiUrl(enuEndpoint);
