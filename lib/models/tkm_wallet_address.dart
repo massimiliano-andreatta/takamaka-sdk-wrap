@@ -46,6 +46,7 @@ class TkmWalletAddress {
   /// Wallet constructor: receives seed, index, and wallet name
   TkmWalletAddress(String seed, int index, String walletName) {
     /// Default name if an explicit name is not provided
+    _index = index;
     _walletName = walletName ;
     _name = "Address $_index";
   }
