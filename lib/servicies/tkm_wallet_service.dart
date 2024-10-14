@@ -40,7 +40,7 @@ class TkmWalletService {
   ///
   /// Returns:
   /// - A [TkmWalletWrap] object representing the newly created wallet.
-  static Future<TkmWalletWrap> createWallet({required String walletName, required String password }) async {
+  static Future<TkmWalletWrap> createWallet({required String walletName, required String password}) async {
     // Retrieve all existing wallets from storage
     List<TkmWalletWrap> wallets = await getWallets();
 
@@ -81,7 +81,7 @@ class TkmWalletService {
 
     // Convert the JSON strings into TkmWalletWrap objects asynchronously
     List<TkmWalletWrap> wallets = await Future.wait(walletJsonList.map(
-          (walletJson) async => TkmWalletWrap.fromJson(jsonDecode(walletJson)),
+      (walletJson) async => TkmWalletWrap.fromJson(jsonDecode(walletJson)),
     ));
 
     return wallets;
@@ -104,12 +104,11 @@ class TkmWalletService {
 
     // Convert JSON strings into wallet objects asynchronously
     List<TkmWalletWrap> wallets = await Future.wait(walletJsonList.map(
-          (walletJson) async => TkmWalletWrap.fromJson(jsonDecode(walletJson)),
+      (walletJson) async => TkmWalletWrap.fromJson(jsonDecode(walletJson)),
     ));
 
     // Find if a wallet with the same name already exists
-    int existingWalletIndex =
-    wallets.indexWhere((w) => w.walletName == wallet.walletName);
+    int existingWalletIndex = wallets.indexWhere((w) => w.walletName == wallet.walletName);
 
     if (existingWalletIndex != -1) {
       // If it exists, update the existing wallet
@@ -120,8 +119,7 @@ class TkmWalletService {
     }
 
     // Convert the updated wallet list back to JSON and save it
-    List<String> updatedWalletJsonList =
-    wallets.map((w) => jsonEncode(w.toJson())).toList();
+    List<String> updatedWalletJsonList = wallets.map((w) => jsonEncode(w.toJson())).toList();
 
     await prefs.setStringList(_walletKey, updatedWalletJsonList);
   }
@@ -142,15 +140,14 @@ class TkmWalletService {
 
     // Convert JSON strings into wallet objects asynchronously
     List<TkmWalletWrap> wallets = await Future.wait(walletJsonList.map(
-          (walletJson) async => TkmWalletWrap.fromJson(jsonDecode(walletJson)),
+      (walletJson) async => TkmWalletWrap.fromJson(jsonDecode(walletJson)),
     ));
 
     // Remove the wallet with the matching name
     wallets.removeWhere((wallet) => wallet.walletName == walletName);
 
     // Save the updated wallet list back to SharedPreferences
-    List<String> updatedWalletJsonList =
-    wallets.map((w) => jsonEncode(w.toJson())).toList();
+    List<String> updatedWalletJsonList = wallets.map((w) => jsonEncode(w.toJson())).toList();
 
     await prefs.setStringList(_walletKey, updatedWalletJsonList);
   }
@@ -169,7 +166,7 @@ class TkmWalletService {
 
     // Find the wallet by its name
     TkmWalletWrap? wallet = wallets.firstWhere(
-          (w) => w.walletName == walletName.walletName,
+      (w) => w.walletName == walletName.walletName,
       orElse: () => throw WalletNotFoundException("Wallet not found"),
     );
 
@@ -193,7 +190,7 @@ class TkmWalletService {
 
     // Find and return the wallet by its name, or throw an exception if not found
     return wallets.firstWhere(
-          (w) => w.walletName == walletName,
+      (w) => w.walletName == walletName,
       orElse: () => throw WalletNotFoundException("Wallet $walletName not found"),
     );
   }
@@ -280,7 +277,7 @@ class TkmWalletService {
   ///
   /// Returns:
   /// - A [Future<TkmWalletCurrenciesChange>] containing the result of the currency change.
-  static Future<TkmWalletCurrenciesChange?> callApiChangeCurrency() async {
+  static Future<TkmWalletCurrenciesChange?> callApiGetChangeCurrency() async {
     // Request a currency change from the API
     var result = await _clientApi.getChangeCurrency();
     return result;
@@ -312,4 +309,10 @@ class TkmWalletService {
     return result;
   }
 
+  // Calls the API to retrieve a list of supported currencies
+  static Future<List<TkmWalletCurrency>> callApiGetCurrencyList() async {
+    // Request the currency list from the API
+    var result = await _clientApi.getCurrencyList();
+    return result;
+  }
 }
