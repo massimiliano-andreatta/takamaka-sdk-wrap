@@ -29,15 +29,24 @@ flutter pub get
 - [x] Retrieve Existing Wallets
 - [x] Create a New Wallet
 - [x] Get Wallet Addresses
+- [] Get all Address for all Wallet
 - [x] Retrieve Transaction List
 - [x] Retrieve Wallet Balance
-- [x] Send TKG (Green Token)
-- [x] Send TKR (Red Token)
 - [x] Retrieve Node List for Staking
 - [x] Retrieve QTESLA Address of a Node
 - [x] Stake TKG on a Node
 - [x] Undo Stake
-
+- [x] Send TKG (Green Token)
+- [x] Send TKR (Red Token)
+- [] Send Blob File
+- [] Send Blob Hash
+- [] Send Blob Text
+- [] Generate QRCODE recive token (TKG/TKR)
+- [] Search Transactions
+- [] Login User
+- [] Get info User
+- [] Get list address user sync
+- [] Sync address
 ---
 
 ### Initialize the Wallet Service
