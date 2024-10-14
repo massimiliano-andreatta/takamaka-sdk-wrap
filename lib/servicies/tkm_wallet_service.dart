@@ -322,4 +322,21 @@ class TkmWalletService {
     var result = await _clientApi.retriveNodeQteslaAddress(shortAddressNode: shortAddressNode);
     return result;
   }
+
+  /// Method to search for transactions based on a given search text.
+  ///
+  /// This method requests a list of transactions from the API that match the specified search criteria.
+  ///
+  /// Parameters:
+  /// - [text]: The search text to filter the transactions. This can be a wallet address, transaction ID, or any relevant keyword.
+  ///
+  /// Returns:
+  /// - A [Future<List<TkmWalletTransaction>>] that resolves to a list of transactions matching the search criteria.
+  ///   If no transactions are found or an error occurs, an empty list will be returned.
+  static Future<List<TkmWalletTransaction>> callApiSearchTransactions({
+    required String text}) async {
+    // Request the list of transactions from the API based on parameters
+    var result = await _clientApi.searchTransactions(text: text);
+    return result;
+  }
 }
