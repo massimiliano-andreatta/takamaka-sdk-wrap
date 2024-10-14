@@ -1,4 +1,3 @@
-
 # TAKAMAKA Dart SDK - Example Usage
 
 This repository contains examples of how to use the `TkmWalletService` in Dart to interact with the Takamaka blockchain. The following are the essential steps to create wallets, handle transactions, and manage staking.
@@ -20,6 +19,26 @@ Then, retrieve the package using:
 ```bash
 flutter pub get
 ```
+
+## Features
+
+- [x] Initialize the Wallet Service
+- [x] Retrieve Blockchain Settings
+- [x] Get Available Currency List
+- [x] Retrieve Exchange Rates
+- [x] Retrieve Existing Wallets
+- [x] Create a New Wallet
+- [x] Get Wallet Addresses
+- [x] Retrieve Transaction List
+- [x] Retrieve Wallet Balance
+- [x] Send TKG (Green Token)
+- [x] Send TKR (Red Token)
+- [x] Retrieve Node List for Staking
+- [x] Retrieve QTESLA Address of a Node
+- [x] Stake TKG on a Node
+- [x] Undo Stake
+
+---
 
 ### Initialize the Wallet Service
 
@@ -108,7 +127,7 @@ List<TkmWalletTransaction> transactionList = await TkmWalletService.callApiGetTr
 To check the balance of a specific address:
 
 ```dart
-var walletBalance = TkmWalletService.callApiGetBalance(address: addressMain.address);
+var walletBalance = await TkmWalletService.callApiGetBalance(address: addressMain.address);
 ```
 
 ### PAY Transactions
@@ -195,7 +214,5 @@ var transaction = await addressMain.verifyTransactionIntegrity(transactionStakeU
 var transactionSend = await addressMain.prepareTransactionForSend(transactionStakeUndo);
 var resultPaySend = await TkmWalletService.callApiSendingTransaction(transactionSend: transactionSend);
 ```
-
----
 
 This `README.md` provides detailed instructions on integrating the Takamaka Dart SDK into your project, managing wallets, transactions, and staking. Be sure to check the SDK documentation for additional features and best practices.
