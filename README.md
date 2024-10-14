@@ -11,7 +11,7 @@ To include the **Takamaka SDK** in your Dart or Flutter project, add the followi
 dependencies:
   takamaka_sdk_wrap:
     git:
-      url: https://massimiliano_andreatta@bitbucket.org/massimiliano_andreatta/takamaka-sdk-wrap.git
+      url: https://github.com/MAXMETIDE/takamaka-sdk-wrap.git
       ref: main
 ```
 
