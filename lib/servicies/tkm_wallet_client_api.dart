@@ -171,7 +171,7 @@ class TkmWalletClientApi {
       /// If successful, return the address.
       if (response.statusCode == 200) {
         var responseData = response.data;
-        if (responseData) {
+        if (responseData != null) {
           return responseData;
         }
       }
@@ -274,7 +274,7 @@ class TkmWalletClientApi {
       /// If successful, parse and return the balance.
       if (response.statusCode == 200) {
         var responseData = response.data;
-        if (responseData) {
+        if (responseData != null) {
           return TkmWalletBalance.fromJson(responseData);
         }
       }
@@ -316,7 +316,7 @@ class TkmWalletClientApi {
       /// If successful, parse and return the list of currencies.
       if (response.statusCode == 200) {
         var responseData = response.data;
-        if (responseData) {
+        if (responseData != null) {
           List<TkmWalletCurrency> currencies = TkmWalletCurrency.fromJsonList(response.data);
           return currencies ?? [];
         }
@@ -361,7 +361,7 @@ class TkmWalletClientApi {
       /// If successful, parse and return the blockchain settings.
       if (response.statusCode == 200) {
         var responseData = response.data;
-        if (responseData) {
+        if (responseData != null) {
           return TkmWalletBlockchainSettings.fromJson(responseData);
         }
       }
@@ -405,7 +405,7 @@ class TkmWalletClientApi {
       /// If successful, parse and return the exchange rates.
       if (response.statusCode == 200) {
         var responseData = response.data;
-        if (responseData) {
+        if (responseData != null) {
           TkmWalletCurrenciesChange exchangeRates = TkmWalletCurrenciesChange.fromJson(responseData);
           return exchangeRates;
         }
@@ -448,8 +448,8 @@ class TkmWalletClientApi {
       /// If successful, parse and return the transactions.
       if (response.statusCode == 200) {
         var responseData = response.data;
-        if (response.statusCode == 200) {
-          List<TkmWalletTransaction> transactions = TkmWalletTransaction.fromJsonList(response.data);
+        if (responseData != null) {
+          List<TkmWalletTransaction> transactions = TkmWalletTransaction.fromJsonList(responseData);
           return transactions ?? [];
         }
       }
