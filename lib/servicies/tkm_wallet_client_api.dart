@@ -64,7 +64,7 @@ class TkmWalletClientApi {
       var response = await _dicClient.request(
         urlCall,
         options: Options(
-          method: methodCall.toString(),
+          method: methodCall.name,
 
           /// Define the HTTP method (GET, POST, etc.).
         ),

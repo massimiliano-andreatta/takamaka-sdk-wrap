@@ -28,7 +28,7 @@ class TkmWalletAddress {
   /// CRC code of the address
   String? _crc;
 
-  /// Display name of the wallet (used in the UI)
+  /// Display name of the address (used in the UI)
   String _name = "";
 
   /// Primary color generated from the address
@@ -44,9 +44,10 @@ class TkmWalletAddress {
   late final SimpleKeyPair _keypair;
 
   /// Wallet constructor: receives seed, index, and wallet name
-  TkmWalletAddress(this._seed, this._index, this._walletName) {
+  TkmWalletAddress(String seed, int index, String walletName) {
     /// Default name if an explicit name is not provided
-    _name = _walletName.isEmpty ? "Address $_index" : _walletName;
+    _walletName = walletName ;
+    _name = "Address $_index";
   }
 
   /// Returns the wallet's "favorite" status
