@@ -29,7 +29,7 @@ flutter pub get
 - [x] Retrieve Existing Wallets
 - [x] Create a New Wallet
 - [x] Get Wallet Addresses
-- [ ] Get all Address for all Wallet
+- [x] Get all Address for all Wallet
 - [x] Retrieve Transaction List
 - [x] Retrieve Wallet Balance
 - [x] Retrieve Node List for Staking

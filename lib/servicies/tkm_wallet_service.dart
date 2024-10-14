@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:io_takamaka_core_wallet/io_takamaka_core_wallet.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:takamaka_sdk_wrap/models/tkm_wallet_address.dart';
 
 import '../enums/tkm_wallet_enum_type_transaction.dart';
 import '../enums/tkm_wallet_enums_api.dart';
@@ -333,10 +334,30 @@ class TkmWalletService {
   /// Returns:
   /// - A [Future<List<TkmWalletTransaction>>] that resolves to a list of transactions matching the search criteria.
   ///   If no transactions are found or an error occurs, an empty list will be returned.
-  static Future<List<TkmWalletTransaction>> callApiSearchTransactions({
-    required String text}) async {
+  static Future<List<TkmWalletTransaction>> callApiSearchTransactions({required String text}) async {
     // Request the list of transactions from the API based on parameters
     var result = await _clientApi.searchTransactions(text: text);
     return result;
   }
+
+  /// Retrieves all visible addresses from a list of TkmWalletWrap objects.
+  /// It filters the addresses of each wallet where the `visible` property is `true`
+  /// and combines them into a single list.
+  ///
+  /// Returns a list of TkmWalletAddress objects that are visible.
+  static Future<List<TkmWalletAddress>> getAddressesForCardPresentation() async {
+    List<TkmWalletAddress> addresses = [];
+
+    // Get the list of TkmWalletWrap
+    List<TkmWalletWrap> wallets = await getWallets();
+
+    // Iterate through each TkmWalletWrap, filter visible addresses, and add them to the list
+    addresses = wallets
+        .expand((wallet) => wallet.addresses
+        .where((address) => address.visible == true))
+        .toList();
+
+    return addresses;
+  }
+
 }
