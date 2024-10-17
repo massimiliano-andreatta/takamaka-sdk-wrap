@@ -1,6 +1,7 @@
 library takamaka_sdk_wrap;
 
 import 'dart:convert';
+import 'dart:ffi';
 import 'package:dio/dio.dart';
 import 'package:io_takamaka_core_wallet/io_takamaka_core_wallet.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -194,6 +195,31 @@ class TkmWalletService {
       (w) => w.walletName == walletName,
       orElse: () => throw WalletNotFoundException("Wallet $walletName not found"),
     );
+  }
+
+  /// Checks if a wallet exists by its name.
+  ///
+  /// This method retrieves all wallets from SharedPreferences and checks
+  /// if any wallet has a name that matches the provided `walletName`.
+  ///
+  /// Returns `true` if a wallet with the given name exists, `false` otherwise.
+  ///
+  /// Example:
+  /// ```dart
+  /// bool exists = await existWalletByName(walletName: "MyWallet");
+  /// ```
+  ///
+  /// Throws no exceptions, just checks for existence.
+  ///
+  /// @param walletName The name of the wallet to look for.
+  /// @return A `Future<bool>` indicating if the wallet exists.
+
+  static Future<bool> existWalletByName({required String walletName}) async {
+    // Retrieve all wallets from SharedPreferences
+    List<TkmWalletWrap> wallets = await getWallets();
+
+    // Check if any wallet has the same name
+    return wallets.any((w) => w.walletName == walletName);
   }
 
   /// Calls the API to retrieve a list of staking nodes.
