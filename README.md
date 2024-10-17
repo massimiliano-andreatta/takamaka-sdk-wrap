@@ -36,8 +36,9 @@ flutter pub get
 - [x] Check if a Wallet Exists by Name
 - [x] Get all Address for all Wallet
 - [x] Retrieve Transaction List
-- [x] Retrieve Wallet Balance
+- [x] Retrieve Address Balance
 - [x] Retrieve Node List for Staking
+- [x] Get all Accepted Bets
 - [x] Retrieve QTESLA Address of a Node
 - [x] Stake TKG on a Node
 - [x] Undo Stake
@@ -89,18 +90,14 @@ To retrieve the current exchange rates of the available currencies:
 var currenciesExchangeRate = await TkmWalletService.callApiGetCurrenciesExchangeRate();
 ```
 
+## Wallet Management
+
 ### Get a Wallet by Name
 
 Get wallet by its name:
 
 ```dart
-
 var wallet = await TkmWalletService.getWalletByName(walletName: 'myWallet');
-if (wallet) {
-print('The wallet exists.');
-} else {
-print('The wallet does not exist.');
-}
 ```
 
 ### Check if a Wallet Exists by Name
@@ -108,15 +105,8 @@ print('The wallet does not exist.');
 To check if a wallet exists by its name:
 
 ```dart
-bool exists = await TkmWalletService.existWalletByName(walletName: 'myWallet');
-if (exists) {
-print('The wallet exists.');
-} else {
-print('The wallet does not exist.');
-}
+bool exists = await TkmWalletService.existWalletByName(walletName: 
 ```
-
-## Wallet Management
 
 ### Retrieve Existing Wallets
 
@@ -131,7 +121,6 @@ var wallets = await TkmWalletService.getWallets();
 If there are no existing wallets, you can create a new one:
 
 ```dart
-
 var wallet = await TkmWalletService.createWallet(walletName: 'myWallet', password: 'myPassword');
 List<String> wordsWalletRecovery = wallet.generatedWordsInitWallet; // 25 recovery words
 await TkmWalletService.saveWallet(wallet: wallet);
@@ -142,16 +131,22 @@ await TkmWalletService.saveWallet(wallet: wallet);
 The first address in the wallet is the main address:
 
 ```dart
-
 var addressMain = wallet.addresses.first;
 ```
 
 You can add new addresses to the wallet:
 
 ```dart
-
 var addressOther = wallet.addAddress(1);
 await TkmWalletService.saveWallet(wallet: wallet); // Don't forget to save changes
+```
+
+### Retrieve Address Balance
+
+To check the balance of a specific address:
+
+```dart
+var walletBalance = await TkmWalletService.callApiGetBalance(address: addressMain.address);
 ```
 
 ## Transaction Management
@@ -161,17 +156,7 @@ await TkmWalletService.saveWallet(wallet: wallet); // Don't forget to save chang
 To retrieve a list of transactions for a specific address, you can use:
 
 ```dart
-
 List<TkmWalletTransaction> transactionList = await TkmWalletService.callApiGetTransactionList(address: addressMain.address, typeTransaction: TkmWalletEnumTypeTransaction.pay);
-```
-
-### Retrieve Wallet Balance
-
-To check the balance of a specific address:
-
-```dart
-
-var walletBalance = await TkmWalletService.callApiGetBalance(address: addressMain.address);
 ```
 
 ### PAY Transactions
@@ -181,7 +166,6 @@ var walletBalance = await TkmWalletService.callApiGetBalance(address: addressMai
 To create and send a PAY transaction with TKG:
 
 ```dart
-
 var valueGreen = TKmTK.unitStringTK("1.20");
 var transactionPay_TKG = await addressMain.createTransactionPayTkg (to: addressMain.address, bigIntValue: valueGreen,message: "test");
 
@@ -195,7 +179,6 @@ var resultPaySend = await TkmWalletService.callApiSendingTransaction(transaction
 Similarly, to create and send a PAY transaction with TKR:
 
 ```dart
-
 var valueRed = TKmTK.unitStringTK("1.20");
 var transactionPay_TKR = await addressMain.createTransactionPayTkr (to: addressMain.address, bigIntValue: valueRed, message: "test");
 
@@ -211,8 +194,7 @@ var resultPaySend = await TkmWalletService.callApiSendingTransaction(transaction
 To retrieve the list of nodes available for staking:
 
 ```dart
-
-var listNode = awaitTkmWalletService.callApiGetNodeList();
+var listNode = await TkmWalletService.callApiGetNodeList();
 ```
 
 ### Retrieve QTESLA Address of a Node
@@ -220,9 +202,14 @@ var listNode = awaitTkmWalletService.callApiGetNodeList();
 To retrieve the QTESLA address for staking on a specific node:
 
 ```dart
-
 var shortAddressNode = listNode[0].shortAddress ?? "";
 var resultRetriveQtesla = await TkmWalletService.callApiRetriveNodeQteslaAddress(shortAddressNode: shortAddressNode);
+```
+
+### Get all Accepted Bets
+To retrieve the Accepted Bets
+```dart
+var resultRetriveAcceptedBets = await getAcceptedBets(address: addressMain.address);
 ```
 
 ### Stake TKG on a Node
@@ -233,10 +220,7 @@ If a QTESLA address is available, you can create a stake transaction:
 if (resultRetriveQtesla != null || !resultRetriveQtesla!.isEmpty) {
 var valueStake = TKmTK.unitStringTK("200");
 var transactionStake = await addressMain.createTransactionStakeAdd(
-qteslaAddress: resultRetriveQtesla,
-bigIntValue: valueStake,
-message: "Stake"
-);
+qteslaAddress: resultRetriveQtesla, bigIntValue: valueStake, message: "Stake");
 
 var transaction = await addressMain.verifyTransactionIntegrity(transactionStake);
 var transactionSend = await addressMain.prepareTransactionForSend(transactionStake);
@@ -249,16 +233,11 @@ var resultPaySend = await TkmWalletService.callApiSendingTransaction(transaction
 To undo all stakes made previously:
 
 ```dart
-
 var transactionStakeUndo = await addressMain.createTransactionStakeUndo();
 
 var transaction = await addressMain.verifyTransactionIntegrity(transactionStakeUndo);
 var transactionSend = await addressMain.prepareTransactionForSend(transactionStakeUndo);
-var resultPaySend = await TkmWalletService.callApiSendingTransaction(
-transactionSend
-:
-transactionSend
-);
+var resultPaySend = await TkmWalletService.callApiSendingTransaction(transactionSend:transactionSend);
 ```
 
 This `README.md` provides detailed instructions on integrating the Takamaka Dart SDK into your

@@ -2,6 +2,7 @@ library takamaka_sdk_wrap;
 
 import 'package:dio/dio.dart';
 import 'package:io_takamaka_core_wallet/io_takamaka_core_wallet.dart';
+import 'package:takamaka_sdk_wrap/models/api/tkm_wallet_accepted_bet.dart';
 
 import '../enums/tkm_wallet_enum_type_transaction.dart';
 import '../enums/tkm_wallet_enums_api.dart';
@@ -443,7 +444,7 @@ class TkmWalletClientApi {
       var options = Options(
         method: methodCall.name,
       );
-      var response = await _dicClient.request(urlCall, options: options, queryParameters:queryParameters);
+      var response = await _dicClient.request(urlCall, options: options, queryParameters: queryParameters);
 
       /// If successful, parse and return the transactions.
       if (response.statusCode == 200) {
@@ -461,6 +462,44 @@ class TkmWalletClientApi {
       return [];
 
       /// Return an empty list on failure.
+    }
+  }
+
+  /// Method to get the currencies exchange rates.
+  ///
+  /// This method calls the specified API endpoint to retrieve the exchange
+  /// rates for the available currencies. It handles the HTTP request
+  /// and parses the response into a [TkmWalletCurrenciesChange] object.
+  ///
+  /// Returns the exchange rates if successful; otherwise, returns null.
+  Future<List<TkmWalletAcceptedBet>> getAcceptedBets({required String address}) async {
+    var enuEndpoint = TkmWalletEnumApiEndpoints.getAcceptedBets;
+
+    /// Endpoint to get the exchange rates.
+    var urlCall = _currentEnv.getFullApiUrl(enuEndpoint);
+
+    /// Get the full URL for the endpoint.
+    var methodCall = _currentEnv.getHttpMethod(enuEndpoint);
+
+    /// Get the HTTP method.
+    var urlWithParam = "$urlCall/$address";
+
+    try {
+      var options = Options(
+        method: methodCall.name,
+
+        /// Specify the HTTP method.
+      );
+      var response = await _dicClient.request(urlWithParam, options: options);
+
+      if (response.statusCode == 200) {
+        List<TkmWalletAcceptedBet> acceptedBets = TkmWalletAcceptedBet.fromJsonList(response.data);
+        return acceptedBets ?? [];
+      }
+
+      return [];
+    } catch (ex) {
+      return [];
     }
   }
 }

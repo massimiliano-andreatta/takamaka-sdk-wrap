@@ -5,6 +5,7 @@ import 'dart:ffi';
 import 'package:dio/dio.dart';
 import 'package:io_takamaka_core_wallet/io_takamaka_core_wallet.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:takamaka_sdk_wrap/models/api/tkm_wallet_accepted_bet.dart';
 import 'package:takamaka_sdk_wrap/models/tkm_wallet_address.dart';
 
 import '../enums/tkm_wallet_enum_type_transaction.dart';
@@ -386,4 +387,9 @@ class TkmWalletService {
     return addresses;
   }
 
+  static Future<List<TkmWalletAcceptedBet>> getAcceptedBets({required String address}) async {
+    // Request the list of transactions from the API based on parameters
+    var result = await _clientApi.getAcceptedBets(address: address);
+    return result;
+  }
 }
