@@ -95,8 +95,8 @@ Get wallet by its name:
 
 ```dart
 
-bool exists = await TkmWalletService.getWalletByName(walletName: 'myWallet');
-if (exists) {
+var wallet = await TkmWalletService.getWalletByName(walletName: 'myWallet');
+if (wallet) {
 print('The wallet exists.');
 } else {
 print('The wallet does not exist.');
