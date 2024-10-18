@@ -14,7 +14,7 @@ enum TkmWalletEnumApiEndpoints {
   getBalance,
   getCurrencyList,
   getBlockchainSettings,
-  getChangeCurrency,
+  getCurrenciesExchangeRate,
   searchTransactions
 }
 
@@ -61,7 +61,7 @@ extension TkmWalletEnumApiEndpointsExtension on TkmWalletEnumApiEndpoints {
         return const TkmWalletApiEndpoint('/api/v1/currencies/list', HttpMethods.GET);
       case TkmWalletEnumApiEndpoints.getBlockchainSettings:
         return const TkmWalletApiEndpoint('/api/tkmsettings', HttpMethods.GET);
-      case TkmWalletEnumApiEndpoints.getChangeCurrency:
+      case TkmWalletEnumApiEndpoints.getCurrenciesExchangeRate:
         return const TkmWalletApiEndpoint('/api/v1/currencies/change', HttpMethods.GET);
       case TkmWalletEnumApiEndpoints.searchTransactions:
         return const TkmWalletApiEndpoint('/api/v1/transactions/search', HttpMethods.GET);

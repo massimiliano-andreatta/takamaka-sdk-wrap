@@ -377,51 +377,6 @@ class TkmWalletClientApi {
     }
   }
 
-  /// Method to get the currencies exchange rates.
-  ///
-  /// This method calls the specified API endpoint to retrieve the exchange
-  /// rates for the available currencies. It handles the HTTP request
-  /// and parses the response into a [TkmWalletCurrenciesChange] object.
-  ///
-  /// Returns the exchange rates if successful; otherwise, returns null.
-  Future<TkmWalletCurrenciesChange?> getChangeCurrency() async {
-    var enuEndpoint = TkmWalletEnumApiEndpoints.getChangeCurrency;
-
-    /// Endpoint to get the exchange rates.
-    var urlCall = _currentEnv.getFullApiUrl(enuEndpoint);
-
-    /// Get the full URL for the endpoint.
-    var methodCall = _currentEnv.getHttpMethod(enuEndpoint);
-
-    /// Get the HTTP method.
-
-    try {
-      var options = Options(
-        method: methodCall.name,
-
-        /// Specify the HTTP method.
-      );
-      var response = await _dicClient.request(urlCall, options: options);
-
-      /// If successful, parse and return the exchange rates.
-      if (response.statusCode == 200) {
-        var responseData = response.data;
-        if (responseData != null) {
-          TkmWalletCurrenciesChange exchangeRates = TkmWalletCurrenciesChange.fromJson(responseData);
-          return exchangeRates;
-        }
-      }
-
-      return null;
-
-      /// Return null if the response is not successful.
-    } catch (ex) {
-      return null;
-
-      /// Return null on failure.
-    }
-  }
-
   /// Searches for wallet transactions.
   ///
   /// This method calls the specified API endpoint to retrieve a list
@@ -500,6 +455,39 @@ class TkmWalletClientApi {
       return [];
     } catch (ex) {
       return [];
+    }
+  }
+
+  /// Method to get the currencies exchange rates.
+  ///
+  /// This method calls the specified API endpoint to retrieve the exchange
+  /// rates for the available currencies. It handles the HTTP request
+  /// and parses the response into a [TkmWalletCurrenciesChange] object.
+  ///
+  /// Returns the exchange rates if successful; otherwise, returns null.
+  Future<TkmWalletCurrenciesChange?> getCurrenciesExchangeRate() async {
+    var enuEndpoint = TkmWalletEnumApiEndpoints.getCurrenciesExchangeRate;  // Endpoint to get the exchange rates.
+    var urlCall = _currentEnv.getFullApiUrl(enuEndpoint);    // Get the full URL for the endpoint.
+    var methodCall = _currentEnv.getHttpMethod(enuEndpoint); // Get the HTTP method.
+
+    try {
+      var options = Options(
+        method: methodCall.name,  // Specify the HTTP method.
+      );
+      var response = await _dicClient.request(urlCall, options: options);
+
+      // If successful, parse and return the exchange rates.
+      if (response.statusCode == 200) {
+        var responseData = response.data;
+        if (responseData) {
+          TkmWalletCurrenciesChange exchangeRates = TkmWalletCurrenciesChange.fromJson(responseData);
+          return exchangeRates;
+        }
+      }
+
+      return null;
+    } catch (ex) {
+      return null;  // Return an empty list on failure.
     }
   }
 }

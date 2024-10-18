@@ -305,9 +305,9 @@ class TkmWalletService {
   ///
   /// Returns:
   /// - A [Future<TkmWalletCurrenciesChange>] containing the result of the currency change.
-  static Future<TkmWalletCurrenciesChange?> callApiGetChangeCurrency() async {
+  static Future<TkmWalletCurrenciesChange?> callApiGetCurrenciesExchangeRate() async {
     // Request a currency change from the API
-    var result = await _clientApi.getChangeCurrency();
+    var result = await _clientApi.getCurrenciesExchangeRate();
     return result;
   }
 
