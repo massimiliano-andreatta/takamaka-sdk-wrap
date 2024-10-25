@@ -45,14 +45,14 @@ class TkmWalletService {
   /// - A [TkmWalletWrap] object representing the newly created wallet.
   static Future<TkmWalletWrap> createWallet({required String walletName, required String password}) async {
     // Retrieve all existing wallets from storage
-    List<TkmWalletWrap> wallets = await getWallets();
+    //List<TkmWalletWrap> wallets = await getWallets();
 
     // Check if a wallet with the same name already exists
-    bool walletExists = wallets.any((w) => w.walletName == walletName);
-    if (walletExists) {
+    //bool walletExists = wallets.any((w) => w.walletName == walletName);
+    //if (walletExists) {
       // If a wallet with the same name exists, throw an exception
-      throw WalletAlreadyExistsException("A wallet with the name '$walletName' already exists.");
-    }
+      //throw WalletAlreadyExistsException("A wallet with the name '$walletName' already exists.");
+    //}
 
     // Create a new wallet with the provided name and password
     TkmWalletWrap wallet = TkmWalletWrap(walletName, password);

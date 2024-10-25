@@ -77,7 +77,7 @@ class TkmWalletAddress {
   String get name => _name;
 
   String get walletName => _walletName;
-  
+
   /// Sets the wallet's display name
   set name(String value) => _name = value.isEmpty ? "Address $_index" : value;
 
