@@ -1,17 +1,20 @@
 library takamaka_sdk_wrap;
 
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:crypto/crypto.dart';
 import 'package:io_takamaka_core_wallet/io_takamaka_core_wallet.dart';
+import 'package:path_provider/path_provider.dart';
 
 import 'tkm_wallet_address.dart';
 import 'tkm_wallet_exceptions.dart';
+import 'package:path/path.dart' as path;
 
 class TkmWalletWrap {
   // Constants for wallet file extension and path
-  final String _walletExtension = ".wallet";
-  final String _walletPath = "wallets";
+  static final String _walletExtension = ".wallet";
+  static final String _walletPath = "wallets";
 
   // Variables for wallet name and password
   late final String _walletName;
@@ -28,6 +31,7 @@ class TkmWalletWrap {
 
   // Constructor with wallet name and password
   TkmWalletWrap(this._walletName, this._password);
+  TkmWalletWrap.restoreWithWords(this._walletName, this._password, this._generatedWordsPreInitWallet);
 
   // Constructor that accepts seed and pre-existing wallet objects
   TkmWalletWrap.withNameSeedAndAddresses(this._walletName, this._seed, List<TkmWalletAddress> addresses) {
@@ -59,9 +63,25 @@ class TkmWalletWrap {
   }
 
   // Async method to retrieve the wallet file
-  Future<void> getFile() async {
-    String encryptedWalletFile = await WalletUtils.readKeyFile(_walletPath, walletName, _walletExtension);
+  Future<File> getFile() async {
+    String separator = path.separator;
+    String fullPath = _walletPath + separator + walletName + _walletExtension;
+    return File(fullPath);
   }
+
+  static Future<TkmWalletWrap> restoreFromKeyWords({required List<String> wordList, required String walletName, required String password}) async {
+    var walletWrap = TkmWalletWrap.restoreWithWords(walletName, password, wordList);
+    walletWrap.initializeWallet();
+    return walletWrap;
+  }
+
+  /*
+  static Future<TkmWalletWrap> restoreWalletFromFile({required File walletFile, required String password}) async {
+    var walletWrap = TkmWalletWrap.restoreWithWords(walletName, password, wordList);
+    walletWrap.initializeWallet();
+    return walletWrap;
+  }
+*/
 
   // Method to initialize the wallet
   Future<void> initializeWallet() async {
@@ -70,7 +90,9 @@ class TkmWalletWrap {
     // If seed is not provided, generate new seed words and initialize the wallet
     if (_seed == null || _seed!.isEmpty) {
       _generatedWordsPreInitWallet = await WordsUtils.generateWords();
+    }
 
+    if (_generatedWordsPreInitWallet.isNotEmpty) {
       // Create a new wallet with the generated seed words and password
       wallet = await WalletUtils.initWallet(
           _walletPath,            // Wallet directory path

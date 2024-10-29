@@ -23,7 +23,7 @@ class TkmWalletAddress {
   ByteBuffer? _identiconData;
 
   /// Wallet address
-  late final String _address;
+  late String _address = "";
 
   /// CRC code of the address
   String? _crc;
@@ -93,7 +93,7 @@ class TkmWalletAddress {
       _keypair = await WalletUtils.getNewKeypairED25519(_seed, index: _index);
       _address = await WalletUtils.getTakamakaAddress(_keypair);
       _crc = await WalletUtils.getCrc32(_keypair);
-      _identiconData = (await WalletUtils.testBitMap(_address)).buffer;
+      _identiconData = (WalletUtils.testBitMap(_address)).buffer;
 
       /// Generating the primary color from the hashed address
       final String hex = CryptoMisc.hash256ToHex(_address);
