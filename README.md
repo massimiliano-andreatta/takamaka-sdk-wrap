@@ -170,6 +170,7 @@ var valueGreen = TKmTK.unitStringTK("1.20");
 var transactionPay_TKG = await addressMain.createTransactionPayTkg (to: addressMain.address, bigIntValue: valueGreen,message: "test");
 
 var transaction = await addressMain.verifyTransactionIntegrity(transactionPay_TKG);
+var transactionFee = await addressMain.calculateTransactionFee(transactionPay_TKG);
 var transactionSend = await addressMain.prepareTransactionForSend(transactionPay_TKG);
 var resultPaySend = await TkmWalletService.callApiSendingTransaction(transactionSend: transactionSend);
 ```
@@ -183,6 +184,7 @@ var valueRed = TKmTK.unitStringTK("1.20");
 var transactionPay_TKR = await addressMain.createTransactionPayTkr (to: addressMain.address, bigIntValue: valueRed, message: "test");
 
 var transaction = await addressMain.verifyTransactionIntegrity(transactionPay_TKR);
+var transactionFee = await addressMain.calculateTransactionFee(transactionPay_TKR);
 var transactionSend = await addressMain.prepareTransactionForSend(transactionPay_TKR);
 var resultPaySend = await TkmWalletService.callApiSendingTransaction(transactionSend: transactionSend);
 ```
@@ -198,6 +200,7 @@ File fileTransaction = File("Path to the file location");
 var transactionBlobHash = await addressMain.createTransactionBlobHash(file: fileTransaction);
 // Check if it's a valid transaction before proceeding with the transaction cost calculation
 transaction = await addressMain.verifyTransactionIntegrity(transactionBlobHash);
+var transactionFee = await addressMain.calculateTransactionFee(transactionBlobHash);
 // Prepare the transaction for sending
 transactionSend = await addressMain.prepareTransactionForSend(transactionBlobHash); 
 resultPaySend = await TkmWalletService.callApiSendingTransaction(transactionSend: transactionSend); // Call the API to send the transaction to the blockchain
@@ -213,6 +216,7 @@ File fileTransaction = File("Path to the file location");
 var transactionBlobFile = await addressMain.createTransactionBlobFile(file: fileTransaction, tags: ["tag1", "tag2", "tag3"]);
 // Check if it's a valid transaction before proceeding with the transaction cost calculation
 transaction = await addressMain.verifyTransactionIntegrity(transactionBlobFile);
+var transactionFee = await addressMain.calculateTransactionFee(transactionBlobFile);
 // Prepare the transaction for sending
 transactionSend = await addressMain.prepareTransactionForSend(transactionBlobFile);
 resultPaySend = await TkmWalletService.callApiSendingTransaction(transactionSend: transactionSend); // Call the API to send the transaction to the blockchain
@@ -227,6 +231,7 @@ Similarly, to create and send a BLOB TEXT transaction with HASH File:
 var transactionBlobText = await addressMain.createTransactionBlobText(message: "test text");
 // Check if it's a valid transaction before proceeding with the transaction cost calculation
 transaction = await addressMain.verifyTransactionIntegrity(transactionBlobText);
+var transactionFee = await addressMain.calculateTransactionFee(transactionBlobText);
 // Prepare the transaction for sending
 transactionSend = await addressMain.prepareTransactionForSend(transactionBlobText);
 resultPaySend = await TkmWalletService.callApiSendingTransaction(transactionSend: transactionSend); // Call the API to send the transaction to the blockchain
@@ -271,6 +276,7 @@ var transactionStake = await addressMain.createTransactionStakeAdd(
 qteslaAddress: resultRetriveQtesla, bigIntValue: valueStake, message: "Stake");
 
 var transaction = await addressMain.verifyTransactionIntegrity(transactionStake);
+var transactionFee = await addressMain.calculateTransactionFee(transactionStake);
 var transactionSend = await addressMain.prepareTransactionForSend(transactionStake);
 var resultPaySend = await TkmWalletService.callApiSendingTransaction(transactionSend: transactionSend);
 }
@@ -284,6 +290,7 @@ To undo all stakes made previously:
 var transactionStakeUndo = await addressMain.createTransactionStakeUndo();
 
 var transaction = await addressMain.verifyTransactionIntegrity(transactionStakeUndo);
+var transactionFee = await addressMain.calculateTransactionFee(transactionStakeUndo);
 var transactionSend = await addressMain.prepareTransactionForSend(transactionStakeUndo);
 var resultPaySend = await TkmWalletService.callApiSendingTransaction(transactionSend:transactionSend);
 ```
