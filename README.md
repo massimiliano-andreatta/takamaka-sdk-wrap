@@ -187,6 +187,54 @@ var transactionSend = await addressMain.prepareTransactionForSend(transactionPay
 var resultPaySend = await TkmWalletService.callApiSendingTransaction(transactionSend: transactionSend);
 ```
 
+### BLOB Transactions
+
+### BLOB HASH Transaction
+
+Similarly, to create and send a BLOB HASH transaction with HASH File:
+
+```dart
+File fileTransaction = File("Path to the file location");
+var transactionBlobHash = await addressMain.createTransactionBlobHash(file: fileTransaction);
+// Check if it's a valid transaction before proceeding with the transaction cost calculation
+transaction = await addressMain.verifyTransactionIntegrity(transactionBlobHash);
+// Prepare the transaction for sending
+transactionSend = await addressMain.prepareTransactionForSend(transactionBlobHash); 
+resultPaySend = await TkmWalletService.callApiSendingTransaction(transactionSend: transactionSend); // Call the API to send the transaction to the blockchain
+
+```
+
+### BLOB FILE Transaction
+
+Similarly, to create and send a BLOB FILE transaction with BLOB File:
+
+```dart
+File fileTransaction = File("Path to the file location");
+var transactionBlobFile = await addressMain.createTransactionBlobFile(file: fileTransaction, tags: ["tag1", "tag2", "tag3"]);
+// Check if it's a valid transaction before proceeding with the transaction cost calculation
+transaction = await addressMain.verifyTransactionIntegrity(transactionBlobFile);
+// Prepare the transaction for sending
+transactionSend = await addressMain.prepareTransactionForSend(transactionBlobFile);
+resultPaySend = await TkmWalletService.callApiSendingTransaction(transactionSend: transactionSend); // Call the API to send the transaction to the blockchain
+
+```
+
+### BLOB TEXT Transaction
+
+Similarly, to create and send a BLOB TEXT transaction with HASH File:
+
+```dart
+var transactionBlobText = await addressMain.createTransactionBlobText(message: "test text");
+// Check if it's a valid transaction before proceeding with the transaction cost calculation
+transaction = await addressMain.verifyTransactionIntegrity(transactionBlobText);
+// Prepare the transaction for sending
+transactionSend = await addressMain.prepareTransactionForSend(transactionBlobText);
+resultPaySend = await TkmWalletService.callApiSendingTransaction(transactionSend: transactionSend); // Call the API to send the transaction to the blockchain
+
+```
+
+
+
 ## Staking
 
 ### Retrieve Node List for Staking

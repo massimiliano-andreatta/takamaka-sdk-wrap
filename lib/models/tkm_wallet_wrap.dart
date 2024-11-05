@@ -71,13 +71,20 @@ class TkmWalletWrap {
 
   static Future<TkmWalletWrap> restoreFromKeyWords({required List<String> wordList, required String walletName, required String password}) async {
     var walletWrap = TkmWalletWrap.restoreWithWords(walletName, password, wordList);
-    walletWrap.initializeWallet();
+    await walletWrap.initializeWallet();
     return walletWrap;
   }
 
   /*
-  static Future<TkmWalletWrap> restoreWalletFromFile({required File walletFile, required String password}) async {
-    var walletWrap = TkmWalletWrap.restoreWithWords(walletName, password, wordList);
+  static Future<TkmWalletWrap> restoreWalletFromFile({required File walletFile, required String walletName, required String password}) async {
+
+    String encriptedWallet = await FileSystemUtils.readFile(walletFile.path);
+    String decriptedString = CryptoMisc.descryptWallet(encriptedWallet, password);
+    dynamic a = jsonDecode(decriptedString);
+    KeyBean kb = KeyBean.fromJson(a);
+
+    String words = kb.words;
+    var walletWrap = TkmWalletWrap.restoreWithWords(walletName, password, words);
     walletWrap.initializeWallet();
     return walletWrap;
   }
