@@ -2,6 +2,7 @@ library takamaka_sdk_wrap;
 
 import 'dart:convert';
 import 'dart:ffi';
+import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:io_takamaka_core_wallet/io_takamaka_core_wallet.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -35,8 +36,8 @@ class TkmWalletService {
     return TkmWalletWrap.restoreFromKeyWords(wordList: words, walletName: walletName, password: password);
   }
 
-  static Future<TkmWalletWrap?> restoreWalletFromFile({required String walletName, required String password, required List<String> words}) {
-    return TkmWalletWrap.restoreFromKeyWords(wordList: words, walletName: walletName, password: password);
+  static Future<TkmWalletWrap?> restoreWalletFromFile({required File walletFile, required String walletName, required String password}) {
+    return TkmWalletWrap.restoreWalletFromFile(walletFile: walletFile, walletName: walletName, password: password);
   }
 
   /// Creates a new wallet and saves it to SharedPreferences.

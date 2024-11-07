@@ -39,7 +39,7 @@
     },
     {
       "name": "asn1lib",
-      "rootUri": "file:///Users/mandreatta/.pub-cache/hosted/pub.dev/asn1lib-1.5.5",
+      "rootUri": "file:///Users/mandreatta/.pub-cache/hosted/pub.dev/asn1lib-1.5.8",
       "packageUri": "lib/",
       "languageVersion": "3.0"
     },
@@ -129,9 +129,9 @@
     },
     {
       "name": "code_builder",
-      "rootUri": "file:///Users/mandreatta/.pub-cache/hosted/pub.dev/code_builder-4.10.0",
+      "rootUri": "file:///Users/mandreatta/.pub-cache/hosted/pub.dev/code_builder-4.10.1",
       "packageUri": "lib/",
-      "languageVersion": "3.0"
+      "languageVersion": "3.5"
     },
     {
       "name": "collection",
@@ -321,7 +321,7 @@
     },
     {
       "name": "io_takamaka_core_wallet",
-      "rootUri": "file:///Users/mandreatta/.pub-cache/hosted/pub.dev/io_takamaka_core_wallet-2.0.9",
+      "rootUri": "file:///Users/mandreatta/.pub-cache/hosted/pub.dev/io_takamaka_core_wallet-2.0.10",
       "packageUri": "lib/",
       "languageVersion": "2.19"
     },
@@ -423,9 +423,9 @@
     },
     {
       "name": "path_provider",
-      "rootUri": "file:///Users/mandreatta/.pub-cache/hosted/pub.dev/path_provider-2.1.4",
+      "rootUri": "file:///Users/mandreatta/.pub-cache/hosted/pub.dev/path_provider-2.1.5",
       "packageUri": "lib/",
-      "languageVersion": "3.2"
+      "languageVersion": "3.4"
     },
     {
       "name": "path_provider_android",
@@ -734,7 +734,7 @@
       "languageVersion": "3.5"
     }
   ],
-  "generated": "2024-10-28T07:54:34.220303Z",
+  "generated": "2024-11-07T19:17:38.749245Z",
   "generator": "pub",
   "generatorVersion": "3.5.3",
   "flutterRoot": "file:///Users/mandreatta/Flutter",

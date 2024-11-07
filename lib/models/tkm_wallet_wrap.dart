@@ -5,8 +5,6 @@ import 'dart:io';
 
 import 'package:crypto/crypto.dart';
 import 'package:io_takamaka_core_wallet/io_takamaka_core_wallet.dart';
-import 'package:path_provider/path_provider.dart';
-
 import 'tkm_wallet_address.dart';
 import 'tkm_wallet_exceptions.dart';
 import 'package:path/path.dart' as path;
@@ -32,7 +30,7 @@ class TkmWalletWrap {
   // Constructor with wallet name and password
   TkmWalletWrap(this._walletName, this._password);
   TkmWalletWrap.restoreWithWords(this._walletName, this._password, this._generatedWordsPreInitWallet);
-
+  
   // Constructor that accepts seed and pre-existing wallet objects
   TkmWalletWrap.withNameSeedAndAddresses(this._walletName, this._seed, List<TkmWalletAddress> addresses) {
     _addresses.addAll(addresses); // Add the passed wallets to the list
@@ -75,52 +73,41 @@ class TkmWalletWrap {
     return walletWrap;
   }
 
-  /*
   static Future<TkmWalletWrap> restoreWalletFromFile({required File walletFile, required String walletName, required String password}) async {
-
     String encriptedWallet = await FileSystemUtils.readFile(walletFile.path);
     String decriptedString = CryptoMisc.descryptWallet(encriptedWallet, password);
+
     dynamic a = jsonDecode(decriptedString);
     KeyBean kb = KeyBean.fromJson(a);
 
-    String words = kb.words;
-    var walletWrap = TkmWalletWrap.restoreWithWords(walletName, password, words);
-    walletWrap.initializeWallet();
+    var walletWrap = TkmWalletWrap.restoreFromKeyWords(walletName: walletName, password: password, wordList: kb.words.split(" "));
     return walletWrap;
   }
-*/
 
   // Method to initialize the wallet
   Future<void> initializeWallet() async {
-    Map<String, dynamic>? wallet;
+    KeyBean kb;
 
     // If seed is not provided, generate new seed words and initialize the wallet
     if (_seed == null || _seed!.isEmpty) {
-      _generatedWordsPreInitWallet = await WordsUtils.generateWords();
+      if (_generatedWordsPreInitWallet.isEmpty) {
+        _generatedWordsPreInitWallet = await WordsUtils.generateWords();
+      }
     }
 
-    if (_generatedWordsPreInitWallet.isNotEmpty) {
-      // Create a new wallet with the generated seed words and password
-      wallet = await WalletUtils.initWallet(
-          _walletPath,            // Wallet directory path
-          _walletName,            // Wallet name from the class variable
-          _walletExtension,       // Wallet extension
-          _password!,             // Provided password
-          _generatedWordsPreInitWallet // Generated seed words
-      );
+    if (_generatedWordsPreInitWallet.isNotEmpty && (_seed == null || _seed!.isEmpty)) {
+      var concat = _generatedWordsPreInitWallet.join(" ");
+      _seed = await WalletUtils.generateSeedPWH(_generatedWordsPreInitWallet);
+      kb = KeyBean("0.1", "POWSEED", "Ed25519BC", _seed!, concat);
     }
 
     // If the wallet is successfully created, initialize the main wallet object
-    if (wallet != null) {
-      _seed = wallet['seed'];
+    if (_seed != null) {
+      _hash = md5.convert(utf8.encode(_seed!)).toString();
 
-      if (_seed != null) {
-        _hash = md5.convert(utf8.encode(_seed!)).toString();
-
-        var addressMain = TkmWalletAddress(_seed!, 0, _walletName);
-        addressMain.initialize(); // Initialize the wallet
-        _addresses.add(addressMain); // Add the wallet to the list
-      }
+      var addressMain = TkmWalletAddress(_seed!, 0, _walletName);
+      await addressMain.initialize(); // Initialize the wallet
+      _addresses.add(addressMain); // Add the wallet to the list
     }
   }
 

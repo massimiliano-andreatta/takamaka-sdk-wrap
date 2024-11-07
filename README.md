@@ -161,6 +161,8 @@ List<TkmWalletTransaction> transactionList = await TkmWalletService.callApiGetTr
 
 ### PAY Transactions
 
+I added the "calculateTransactionFee" method to calculate the transaction cost. After the user presses the send button, the "calculateTransactionFee" method should be called, and the value should be displayed in an alert.
+
 #### Send TKG (Green Token)
 
 To create and send a PAY transaction with TKG:
