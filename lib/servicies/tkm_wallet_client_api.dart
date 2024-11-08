@@ -479,7 +479,7 @@ class TkmWalletClientApi {
       // If successful, parse and return the exchange rates.
       if (response.statusCode == 200) {
         var responseData = response.data;
-        if (responseData) {
+        if (responseData != null) {
           TkmWalletCurrenciesChange exchangeRates = TkmWalletCurrenciesChange.fromJson(responseData);
           return exchangeRates;
         }
