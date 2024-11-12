@@ -40,6 +40,10 @@ class TkmWalletService {
     return TkmWalletWrap.restoreWalletFromFile(walletFile: walletFile, walletName: walletName, password: password);
   }
 
+  static List<String> getAllWords() {
+    return DictionaryReader.readDictionary();
+  }
+
   /// Creates a new wallet and saves it to SharedPreferences.
   ///
   /// This method checks if a wallet with the same name already exists. If it does,
