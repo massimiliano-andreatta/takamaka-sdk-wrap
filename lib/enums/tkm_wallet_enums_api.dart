@@ -5,7 +5,11 @@ import 'package:io_takamaka_core_wallet/io_takamaka_core_wallet.dart';
 import '../models/api/tkm_wallet_api_endpoint.dart';
 
 enum TkmWalletEnumApiEndpoints {
-  login,
+  authLogin,
+  authRefreshToken,
+  authGetInfoUser,
+  authGetListAddressRegisterForUser,
+  authSyncAddress,
   sendTransaction,
   retiveQtelsaAddress,
   getStakingNodeList,
@@ -43,8 +47,17 @@ enum TkmWalletEnumEnvironments {
 extension TkmWalletEnumApiEndpointsExtension on TkmWalletEnumApiEndpoints {
   TkmWalletApiEndpoint get details {
     switch (this) {
-      case TkmWalletEnumApiEndpoints.login:
+      case TkmWalletEnumApiEndpoints.authLogin:
         return const TkmWalletApiEndpoint('/api/a4l/login', HttpMethods.POST);
+      case TkmWalletEnumApiEndpoints.authGetInfoUser:
+        return const TkmWalletApiEndpoint('/api/a4l/get-basic-user-info', HttpMethods.POST);
+      case TkmWalletEnumApiEndpoints.authGetListAddressRegisterForUser:
+        return const TkmWalletApiEndpoint('/api/a4l/get-user-addresses', HttpMethods.POST);
+      case TkmWalletEnumApiEndpoints.authRefreshToken:
+        return const TkmWalletApiEndpoint('/api/a4l/login', HttpMethods.POST);
+      case TkmWalletEnumApiEndpoints.authSyncAddress:
+        return const TkmWalletApiEndpoint('/api/a4l/add-user-address', HttpMethods.POST);
+
       case TkmWalletEnumApiEndpoints.sendTransaction:
         return const TkmWalletApiEndpoint('/api/v1/transaction', HttpMethods.POST);
       case TkmWalletEnumApiEndpoints.retiveQtelsaAddress:

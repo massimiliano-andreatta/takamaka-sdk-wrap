@@ -194,10 +194,22 @@
       "languageVersion": "3.4"
     },
     {
+      "name": "either_dart",
+      "rootUri": "file:///Users/mandreatta/.pub-cache/hosted/pub.dev/either_dart-1.0.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
+    },
+    {
       "name": "encrypt",
       "rootUri": "file:///Users/mandreatta/.pub-cache/hosted/pub.dev/encrypt-5.0.3",
       "packageUri": "lib/",
       "languageVersion": "2.18"
+    },
+    {
+      "name": "equatable",
+      "rootUri": "file:///Users/mandreatta/.pub-cache/hosted/pub.dev/equatable-2.0.6",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
     },
     {
       "name": "exif",
@@ -240,6 +252,12 @@
       "rootUri": "file:///Users/mandreatta/.pub-cache/hosted/pub.dev/flutter_lints-5.0.0",
       "packageUri": "lib/",
       "languageVersion": "3.5"
+    },
+    {
+      "name": "flutter_pretty_dio_logger",
+      "rootUri": "file:///Users/mandreatta/.pub-cache/hosted/pub.dev/flutter_pretty_dio_logger-3.0.0",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
     },
     {
       "name": "flutter_rust_bridge",
@@ -734,7 +752,7 @@
       "languageVersion": "3.5"
     }
   ],
-  "generated": "2024-11-07T19:17:38.749245Z",
+  "generated": "2024-11-21T15:41:57.619869Z",
   "generator": "pub",
   "generatorVersion": "3.5.3",
   "flutterRoot": "file:///Users/mandreatta/Flutter",

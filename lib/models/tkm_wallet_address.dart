@@ -164,6 +164,18 @@ class TkmWalletAddress {
   }
 
   /// Creates a text message transaction
+  Future<TransactionBean> createTransactionBlobSyncAddress() async {
+    final notBefore = TKmTK.getTransactionTime();
+
+    InternalTransactionBean itb = BuilderItb.common(TransactionType.BLOB, notBefore);
+    itb.from = _address;
+    itb.message = "add_address";
+    itb.transactionHash = StringUtilities.internalTransactionBeanHash(itb);
+
+    return await _createGenericTransaction(itb);
+  }
+
+  /// Creates a text message transaction
   Future<TransactionBean> createTransactionBlobText({required String message}) async {
     final transactionTime = TKmTK.getTransactionTime();
     final itb = BuilderItb.blob(_address, message, transactionTime);

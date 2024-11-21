@@ -4,10 +4,18 @@ import 'dart:convert';
 import 'dart:ffi';
 import 'dart:io';
 import 'package:dio/dio.dart';
+import 'package:either_dart/either.dart';
 import 'package:io_takamaka_core_wallet/io_takamaka_core_wallet.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:takamaka_sdk_wrap/models/api/tkm_wallet_accepted_bet.dart';
+import 'package:takamaka_sdk_wrap/models/auth/tkm_failure.dart';
+import 'package:takamaka_sdk_wrap/models/auth/tkm_info_user_response.dart';
+import 'package:takamaka_sdk_wrap/models/auth/tkm_list_address_response.dart';
+import 'package:takamaka_sdk_wrap/models/auth/tkm_login_request.dart';
+import 'package:takamaka_sdk_wrap/models/auth/tkm_login_response.dart';
+import 'package:takamaka_sdk_wrap/models/auth/tkm_sync_address_response.dart';
 import 'package:takamaka_sdk_wrap/models/tkm_wallet_address.dart';
+import 'package:takamaka_sdk_wrap/servicies/tkm_auth_client_api.dart';
 
 import '../enums/tkm_wallet_enum_type_transaction.dart';
 import '../enums/tkm_wallet_enums_api.dart';
@@ -27,9 +35,11 @@ class TkmWalletService {
 
   // Initialize the API client for wallet interactions, targeting the test environment
   static late TkmWalletClientApi _clientApi;
+  static late TkmWalletAuthClientApi _clientApiAuth;
 
   TkmWalletService({required TkmWalletEnumEnvironments currentEnv}) {
-    _clientApi = TkmWalletClientApi(currentEnv: TkmWalletEnumEnvironments.test, dicClient: Dio());
+    _clientApi = TkmWalletClientApi(currentEnv: currentEnv, dicClient: Dio());
+    _clientApiAuth = TkmWalletAuthClientApi(currentEnv: currentEnv, dicClient: Dio());
   }
 
   static Future<TkmWalletWrap?> restoreWalletFromKeyWords({required String walletName, required String password, required List<String> words}) {
@@ -43,6 +53,27 @@ class TkmWalletService {
   static List<String> getAllWords() {
     return DictionaryReader.readDictionary();
   }
+
+  static Future<Either<TkmFailure, TkmLoginResponse>> authLogin({required TkmLoginRequest loginRequest}) async {
+    return _clientApiAuth.login(loginRequest);
+  }
+
+  static Future<Either<TkmFailure, TkmSyncAddressResponse>> authSyncAddress({required String token, required TkmWalletAddress address}) async {
+    return _clientApiAuth.syncAddress(token, address);
+  }
+
+  static Future<Either<TkmFailure, TkmLoginResponse>> authRefreshToken({required String refreshToken, required String username, required String deviceId}) async  {
+    return _clientApiAuth.refreshToken(refreshToken, username, deviceId);
+  }
+
+  static Future<Either<TkmFailure, List<TkmAddressResponse>>> authGetListAddressRegisterForUser({required String token}) async {
+    return _clientApiAuth.getListAddressRegisterForUser(token);
+  }
+
+  static Future<Either<TkmFailure, TkmInfoUserResponse>> authGetInfoUser({required String token}) async {
+    return _clientApiAuth.getInfoUser(token);
+  }
+
 
   /// Creates a new wallet and saves it to SharedPreferences.
   ///
@@ -391,10 +422,7 @@ class TkmWalletService {
     List<TkmWalletWrap> wallets = await getWallets();
 
     // Iterate through each TkmWalletWrap, filter visible addresses, and add them to the list
-    addresses = wallets
-        .expand((wallet) => wallet.addresses
-        .where((address) => address.visible == true))
-        .toList();
+    addresses = wallets.expand((wallet) => wallet.addresses.where((address) => address.visible == true)).toList();
 
     return addresses;
   }
