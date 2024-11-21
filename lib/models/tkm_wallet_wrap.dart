@@ -111,6 +111,24 @@ class TkmWalletWrap {
     }
   }
 
+  Future<bool> removeAddress(int index) async {
+    if (_seed != null) {
+      if (index == 0) {
+        throw InvalidIndexException("Index 0 is not allowed for remove address wallet.");
+      }
+
+      bool isIndexAlreadyUsed = _addresses.any((wallet) => wallet.index == index);
+      if (isIndexAlreadyUsed == false) {
+        throw DuplicateIndexException("Index $index is not already used by wallet.");
+      }
+
+      _addresses.removeAt(index);
+      return true;
+    }
+
+    return false;
+  }
+
   // Method to add a new wallet address based on a given index
   Future<TkmWalletAddress?> addAddress(int index) async {
     // Ensure the seed is available
@@ -125,7 +143,7 @@ class TkmWalletWrap {
 
       // If the index is already used, throw a duplicate index exception
       if (isIndexAlreadyUsed) {
-        throw DuplicateIndexException("Index $index is already used by another wallet.");
+        throw DuplicateIndexException("Index $index is already used by wallet.");
       }
 
       // Create and initialize a new wallet with the provided index
