@@ -7,12 +7,14 @@ import 'package:dio/dio.dart';
 import 'package:either_dart/either.dart';
 import 'package:io_takamaka_core_wallet/io_takamaka_core_wallet.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:takamaka_sdk_wrap/mock/tkm_mock_generate.dart';
 import 'package:takamaka_sdk_wrap/models/api/tkm_wallet_accepted_bet.dart';
 import 'package:takamaka_sdk_wrap/models/auth/tkm_failure.dart';
 import 'package:takamaka_sdk_wrap/models/auth/tkm_info_user_response.dart';
 import 'package:takamaka_sdk_wrap/models/auth/tkm_list_address_response.dart';
 import 'package:takamaka_sdk_wrap/models/auth/tkm_login_request.dart';
 import 'package:takamaka_sdk_wrap/models/auth/tkm_login_response.dart';
+import 'package:takamaka_sdk_wrap/models/auth/tkm_notification_response.dart';
 import 'package:takamaka_sdk_wrap/models/auth/tkm_sync_address_response.dart';
 import 'package:takamaka_sdk_wrap/models/tkm_wallet_address.dart';
 import 'package:takamaka_sdk_wrap/servicies/tkm_auth_client_api.dart';
@@ -74,6 +76,12 @@ class TkmWalletService {
     return _clientApiAuth.getInfoUser(token);
   }
 
+  static Future<Either<TkmFailure, List<TkmNotificationResponse>>> authGetNotifications({required String? token}) async {
+
+  return Right(TkmMockGenerate.getNotifications());
+
+    return _clientApiAuth.authGetNotifications(token);
+  }
 
   /// Creates a new wallet and saves it to SharedPreferences.
   ///

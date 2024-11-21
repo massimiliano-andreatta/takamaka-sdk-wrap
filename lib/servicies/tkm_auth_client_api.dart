@@ -8,6 +8,7 @@ import 'package:takamaka_sdk_wrap/models/auth/tkm_info_user_response.dart';
 import 'package:takamaka_sdk_wrap/models/auth/tkm_list_address_response.dart';
 import 'package:takamaka_sdk_wrap/models/auth/tkm_login_request.dart';
 import 'package:takamaka_sdk_wrap/models/auth/tkm_login_response.dart';
+import 'package:takamaka_sdk_wrap/models/auth/tkm_notification_response.dart';
 import 'package:takamaka_sdk_wrap/models/auth/tkm_sync_address_response.dart';
 import 'package:takamaka_sdk_wrap/models/tkm_wallet_address.dart';
 
@@ -18,6 +19,41 @@ class TkmWalletAuthClientApi {
   TkmWalletAuthClientApi({required Dio dicClient, required TkmWalletEnumEnvironments currentEnv})
       : _dicClient = dicClient,
         _currentEnv = currentEnv;
+
+
+  Future<Either<TkmFailure, List<TkmNotificationResponse>>> authGetNotifications(String? token) async {
+    try {
+      const enuEndpoint = TkmWalletEnumApiEndpoints.authGetInfoUser;
+      var urlCall = _currentEnv.getFullApiUrl(enuEndpoint);
+      var methodCall = _currentEnv.getHttpMethod(enuEndpoint);
+
+      var headers = {'Content-Type': 'application/json'};
+      if (token != null) {
+        headers["Authorization"] = "Bearer $token";
+      }
+
+      var response = await _dicClient.request(
+        urlCall,
+        options: Options(method: methodCall.name, headers: headers),
+      );
+
+      switch (response.statusCode) {
+        case 200:
+          List<TkmNotificationResponse> notifications = (response.data as List)
+              .map((e) => TkmNotificationResponse.fromJson(e))
+              .toList();
+          return Right(notifications);
+        case 401:
+          return Left(TkmAuthenticationFailure('Not authentication: ${response.statusCode}'));
+        case 500:
+          return Left(TkmServerFailure());
+        default:
+          return Left(TkmGenericFailure(null));
+      }
+    } catch (error) {
+      return Left(TkmGenericFailure(error.toString()));
+    }
+  }
 
   Future<Either<TkmFailure, TkmInfoUserResponse>> getInfoUser(String token) async {
     try {

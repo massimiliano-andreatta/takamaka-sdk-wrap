@@ -204,7 +204,7 @@ var transactionBlobHash = await addressMain.createTransactionBlobHash(file: file
 transaction = await addressMain.verifyTransactionIntegrity(transactionBlobHash);
 var transactionFee = await addressMain.calculateTransactionFee(transactionBlobHash);
 // Prepare the transaction for sending
-transactionSend = await addressMain.prepareTransactionForSend(transactionBlobHash); 
+transactionSend = await addressMain.prepareTransactionForSend(transactionBlobHash);
 resultPaySend = await TkmWalletService.callApiSendingTransaction(transactionSend: transactionSend); // Call the API to send the transaction to the blockchain
 
 ```
@@ -297,6 +297,108 @@ var transactionSend = await addressMain.prepareTransactionForSend(transactionSta
 var resultPaySend = await TkmWalletService.callApiSendingTransaction(transactionSend:transactionSend);
 ```
 
+## Notifications
+Regarding the notifications, these are not push notifications but direct notifications to the user. For now, there are no TAKAMAKA APIs that return this information, but the wrap SDK has implemented APIs with mock data.
+
+```dart
+
+var callGetNotifications = await TkmWalletService.authGetNotifications(token: loginResponse!.token);
+callGetNotifications.fold(
+          //Error
+          (left) {
+            print(left.message);
+          },
+          //Success
+          (right) {
+            print(right);
+          },
+        );
+
+```
+
+## API Auth
+
+## Login
+```dart
+TkmLoginResponse? loginResponse = null;
+
+var loginRequest = TkmLoginRequest(username: "massimiliano.andreatta@gmail.com", password: "PasswordDifficile13", deviceId: "12345");
+var callLogin = await TkmWalletService.authLogin(loginRequest: loginRequest);
+callLogin.fold(
+        (left) {
+          print(left.message);
+        },
+        (right) {
+          loginResponse = right;
+        },
+      );
+
+```
+
+## Refresh Token
+```dart
+var callRefreshToken = await TkmWalletService.authRefreshToken(refreshToken: loginResponse!.refreshToken!, username: loginRequest.username, deviceId: loginRequest.deviceId);
+callRefreshToken.fold(
+          //Error
+          (left) {
+            print(left.message);
+          },
+          //Success
+          (right) {
+            loginResponse = right;
+          },
+        );
+```
+
+## Info User
+```dart
+var callInfoUser = await TkmWalletService.authGetInfoUser(token: loginResponse!.token);
+callInfoUser.fold(
+          //Error
+          (left) {
+            print(left.message);
+          },
+          //Success
+          (right) {
+            print(right.name);
+          },
+        );
+```
+
+## Get List Address Register For User
+```dart
+var callGetListAddressSyncoUser = await TkmWalletService.authGetListAddressRegisterForUser(token: loginResponse!.token);
+callGetListAddressSyncoUser.fold(
+          //Error
+          (left) {
+            print(left.message);
+          },
+          //Success
+          (right) {
+            print(right);
+          },
+        );
+```
+
+## Sync Address
+```dart
+var addressMain = wallet.addresses.first;
+var callSyncAddressUser = await TkmWalletService.authSyncAddress(token: loginResponse!.token, address: addressMain);
+callSyncAddressUser.fold(
+          //Error
+          (left) {
+            print(left.message);
+          },
+          //Success
+          (right) {
+            if (right.error ?? false) {
+              print(right.message);
+            } else {
+              print(right.message);
+            }
+          },
+     );
+```
 This `README.md` provides detailed instructions on integrating the Takamaka Dart SDK into your
 project, managing wallets, transactions, and staking. Be sure to check the SDK documentation for
 additional features and best practices.
