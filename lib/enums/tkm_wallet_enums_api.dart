@@ -64,7 +64,7 @@ extension TkmWalletEnumApiEndpointsExtension on TkmWalletEnumApiEndpoints {
       case TkmWalletEnumApiEndpoints.getCurrenciesExchangeRate:
         return const TkmWalletApiEndpoint('/api/v1/currencies/change', HttpMethods.GET);
       case TkmWalletEnumApiEndpoints.searchTransactions:
-        return const TkmWalletApiEndpoint('/api/v1/transactions/search', HttpMethods.GET);
+        return const TkmWalletApiEndpoint('/api/v1/transactions/search', HttpMethods.POST);
     }
   }
 }

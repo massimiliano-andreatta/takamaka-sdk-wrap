@@ -394,12 +394,15 @@ class TkmWalletClientApi {
 
     /// Get the full URL for the endpoint.
     var methodCall = _currentEnv.getHttpMethod(enuEndpoint);
-    Map<String, dynamic> queryParameters = {"data": text};
+
+    var data = FormData.fromMap({
+      'data':text
+    });
     try {
       var options = Options(
         method: methodCall.name,
       );
-      var response = await _dicClient.request(urlCall, options: options, queryParameters: queryParameters);
+      var response = await _dicClient.request(urlCall, options: options, data: data);
 
       /// If successful, parse and return the transactions.
       if (response.statusCode == 200) {
