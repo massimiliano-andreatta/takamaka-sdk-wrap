@@ -30,7 +30,7 @@ class TkmWalletWrap {
   // Constructor with wallet name and password
   TkmWalletWrap(this._walletName, this._password);
   TkmWalletWrap.restoreWithWords(this._walletName, this._password, this._generatedWordsPreInitWallet);
-  
+
   // Constructor that accepts seed and pre-existing wallet objects
   TkmWalletWrap.withNameSeedAndAddresses(this._walletName, this._seed, List<TkmWalletAddress> addresses) {
     _addresses.addAll(addresses); // Add the passed wallets to the list
@@ -117,12 +117,16 @@ class TkmWalletWrap {
         throw InvalidIndexException("Index 0 is not allowed for remove address wallet.");
       }
 
-      bool isIndexAlreadyUsed = _addresses.any((wallet) => wallet.index == index);
+      bool isIndexAlreadyUsed = _addresses.any((address) => address.index == index);
       if (isIndexAlreadyUsed == false) {
         throw DuplicateIndexException("Index $index is not already used by wallet.");
       }
 
-      _addresses.removeAt(index);
+      _addresses.removeWhere(
+        (address) {
+          return address.index == index;
+        },
+      );
       return true;
     }
 
@@ -149,7 +153,7 @@ class TkmWalletWrap {
       // Create and initialize a new wallet with the provided index
       var address = TkmWalletAddress(_seed!, index, _walletName);
       await address.initialize(); // Initialize the wallet
-      _addresses.add(address);      // Add the new wallet to the list
+      _addresses.add(address); // Add the new wallet to the list
 
       return address;
     }
@@ -172,9 +176,7 @@ class TkmWalletWrap {
   static Future<TkmWalletWrap> fromJson(Map<String, dynamic> json) async {
     // Create the wallet wrapper with seed and wallet objects from the JSON
     List<TkmWalletAddress> addresses = await Future.wait(
-      (json['addresses'] as List)
-          .map((walletJson) => TkmWalletAddress.fromJson(walletJson))
-          .toList(),
+      (json['addresses'] as List).map((walletJson) => TkmWalletAddress.fromJson(walletJson)).toList(),
     );
 
     // Return the constructed wallet wrapper object
@@ -184,5 +186,4 @@ class TkmWalletWrap {
       addresses,
     );
   }
-
 }

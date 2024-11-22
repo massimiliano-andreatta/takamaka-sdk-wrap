@@ -49,7 +49,12 @@ class TkmWalletAddress {
     _seed = seed;
     _index = index;
     _walletName = walletName ;
-    _name = "Address $_index";
+    if (_index == 0) {
+      _name = "Address Main";
+    } else {
+      _name = "Address $_index";
+    }
+
   }
 
   /// Returns the wallet's "favorite" status
