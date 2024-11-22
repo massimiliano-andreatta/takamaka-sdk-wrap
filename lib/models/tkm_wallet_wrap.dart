@@ -111,22 +111,19 @@ class TkmWalletWrap {
     }
   }
 
-  Future<bool> removeAddress(int index) async {
+  Future<bool> removeAddress(TkmWalletAddress address) async {
     if (_seed != null) {
-      if (index == 0) {
+      if (address.index == 0) {
         throw InvalidIndexException("Index 0 is not allowed for remove address wallet.");
       }
 
-      bool isIndexAlreadyUsed = _addresses.any((address) => address.index == index);
+      bool isIndexAlreadyUsed = _addresses.any((ele) => ele.index == address.index);
       if (isIndexAlreadyUsed == false) {
-        throw DuplicateIndexException("Index $index is not already used by wallet.");
+        throw DuplicateIndexException("Index ${address.index} is not already used by wallet.");
       }
 
-      _addresses.removeWhere(
-        (address) {
-          return address.index == index;
-        },
-      );
+      _addresses.remove(address);
+      
       return true;
     }
 
