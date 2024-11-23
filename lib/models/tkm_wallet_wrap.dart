@@ -123,7 +123,7 @@ class TkmWalletWrap {
       }
 
       _addresses.remove(address);
-      
+
       return true;
     }
 

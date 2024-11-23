@@ -87,7 +87,7 @@ class TkmWalletAddress {
   set name(String value) => _name = value.isEmpty ? "Address $_index" : value;
 
   /// Returns the wallet's visibility status
-  bool get visible => _visible;
+  bool get visible => _index == 0 ? true : _visible;
 
   /// Sets the wallet's visibility
   void setVisible(bool visible) => _visible = visible;
