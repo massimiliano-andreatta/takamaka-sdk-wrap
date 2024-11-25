@@ -264,7 +264,7 @@ var resultRetriveQtesla = await TkmWalletService.callApiRetriveNodeQteslaAddress
 ### Get all Accepted Bets
 To retrieve the Accepted Bets
 ```dart
-var resultRetriveAcceptedBets = await getAcceptedBets(address: addressMain.address);
+var resultRetriveAcceptedBets = await TkmWalletService.getAcceptedBets(address: addressMain.address);
 ```
 
 ### Stake TKG on a Node
