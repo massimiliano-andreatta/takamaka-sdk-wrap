@@ -12,7 +12,7 @@ import 'package:path/path.dart' as path;
 class TkmWalletWrap {
   // Constants for wallet file extension and path
   static final String _walletExtension = ".wallet";
-  static final String _walletPath = "wallets";
+  static final String _walletDirectory = "wallets";
 
   // Variables for wallet name and password
   late final String _walletName;
@@ -46,6 +46,10 @@ class TkmWalletWrap {
     return _walletName;
   }
 
+  String get walletPath {
+    return _walletDirectory;
+  }
+
   String? get hash {
     return _hash;
   }
@@ -62,9 +66,18 @@ class TkmWalletWrap {
 
   // Async method to retrieve the wallet file
   Future<File> getFile() async {
+    await writeEncryptedKeyFiles();
     String separator = path.separator;
-    String fullPath = _walletPath + separator + walletName + _walletExtension;
+    String fullPath = _walletDirectory + separator + walletName + _walletExtension;
     return File(fullPath);
+  }
+
+  Future<void> writeEncryptedKeyFiles() async {
+    var concat = _generatedWordsPreInitWallet.join(" ");
+    KeyBean kb = KeyBean("0.1", "POWSEED", "Ed25519BC", _seed!, concat);
+    String separator = path.separator;
+    String fullPath = _walletDirectory + separator + walletName + _walletExtension;
+    await WalletUtils.writeEncryptedKeyFiles(fullPath, _walletDirectory, _walletName, _walletExtension, kb, _password!);
   }
 
   static Future<TkmWalletWrap> restoreFromKeyWords({required List<String> wordList, required String walletName, required String password}) async {
