@@ -5,6 +5,7 @@ import 'dart:ffi';
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:either_dart/either.dart';
+import 'package:flutter/foundation.dart';
 import 'package:io_takamaka_core_wallet/io_takamaka_core_wallet.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:takamaka_sdk_wrap/mock/tkm_mock_generate.dart';
@@ -134,10 +135,22 @@ class TkmWalletService {
       return [];
     }
 
-    // Convert the JSON strings into TkmWalletWrap objects asynchronously
-    List<TkmWalletWrap> wallets = await Future.wait(walletJsonList.map(
-      (walletJson) async => TkmWalletWrap.fromJson(jsonDecode(walletJson)),
-    ));
+    // Batch size to process in parallel
+    const batchSize = 10; // Puoi cambiare la dimensione del batch in base alle tue necessità
+
+    List<TkmWalletWrap> wallets = [];
+
+    // Esegui la decodifica in batch
+    for (int i = 0; i < walletJsonList.length; i += batchSize) {
+      final batch = walletJsonList.sublist(i, i + batchSize > walletJsonList.length ? walletJsonList.length : i + batchSize);
+
+      // Decodifica il batch in parallelo
+      List<TkmWalletWrap> batchWallets = await Future.wait(batch.map(
+            (walletJson) async => TkmWalletWrap.fromJson(jsonDecode(walletJson)),
+      ));
+
+      wallets.addAll(batchWallets);
+    }
 
     return wallets;
   }
