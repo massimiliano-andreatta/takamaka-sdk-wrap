@@ -1,6 +1,8 @@
 library takamaka_sdk_wrap;
 
 import 'package:dio/dio.dart';
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:io_takamaka_core_wallet/io_takamaka_core_wallet.dart';
 import 'package:takamaka_sdk_wrap/models/api/tkm_wallet_accepted_bet.dart';
 
@@ -389,37 +391,51 @@ class TkmWalletClientApi {
   Future<List<TkmWalletTransaction>> searchTransactions({required String text}) async {
     var enuEndpoint = TkmWalletEnumApiEndpoints.searchTransactions;
 
-    /// Endpoint to get the transaction data.
+    // Endpoint per ottenere i dati delle transazioni.
     var urlCall = _currentEnv.getFullApiUrl(enuEndpoint);
 
-    /// Get the full URL for the endpoint.
+    // Ottieni il metodo HTTP da chiamare.
     var methodCall = _currentEnv.getHttpMethod(enuEndpoint);
 
     var data = FormData.fromMap({
-      'data':text
+      'data': text,
     });
+
     try {
       var options = Options(
         method: methodCall.name,
       );
+
+      // Esegui la richiesta HTTP.
       var response = await _dicClient.request(urlCall, options: options, data: data);
 
-      /// If successful, parse and return the transactions.
-      if (response.statusCode == 200) {
-        var responseData = response.data;
-        if (responseData != null) {
-          List<TkmWalletTransaction> transactions = TkmWalletTransaction.fromJsonList(responseData);
-          return transactions ?? [];
-        }
+      // Se la risposta è positiva, estrai solo i dati e passa al parsing in un thread separato.
+      if (response.statusCode == 200 && response.data != null) {
+        print('Tipo di response.data: ${response.data.runtimeType}');
+        // Passiamo solo i dati JSON al thread separato
+        var responseData = response.data; // Supponiamo che sia una lista o una mappa
+        var serializableData = jsonEncode(responseData); // Converte in stringa JSON
+
+        // Usa compute per decodificare i dati in un thread separato
+        return await compute<String, List<TkmWalletTransaction>>(decodeTransactions, serializableData);
       }
 
       return [];
-
-      /// Return an empty list if the response is not successful.
     } catch (ex) {
+      // In caso di errore, ritorna una lista vuota
       return [];
+    }
+  }
 
-      /// Return an empty list on failure.
+// Funzione di parsing del JSON che verrà eseguita in un thread separato
+  static List<TkmWalletTransaction> decodeTransactions(String jsonString) {
+    var responseData = jsonDecode(jsonString);
+    try {
+      // Decodifica i dati JSON in una lista di transazioni
+      return TkmWalletTransaction.fromJsonList(responseData) ?? [];
+    } catch (e) {
+      // In caso di errore nel parsing, ritorna una lista vuota
+      return [];
     }
   }
 
