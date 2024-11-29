@@ -185,7 +185,7 @@ class TkmWalletAddress {
 
     var mapsBlob = {"platform": Platform.operatingSystem, "type": "text", "data": message};
 
-    final itb = BuilderItb.blob(_address, mapsBlob, transactionTime);
+    final itb = BuilderItb.blob(_address, jsonEncode(mapsBlob), transactionTime);
 
     return await _createGenericTransaction(itb);
   }
