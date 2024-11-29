@@ -48,13 +48,12 @@ class TkmWalletAddress {
     /// Default name if an explicit name is not provided
     _seed = seed;
     _index = index;
-    _walletName = walletName ;
+    _walletName = walletName;
     if (_index == 0) {
       _name = "Address Main";
     } else {
       _name = "Address $_index";
     }
-
   }
 
   /// Returns the wallet's "favorite" status
@@ -183,7 +182,10 @@ class TkmWalletAddress {
   /// Creates a text message transaction
   Future<TransactionBean> createTransactionBlobText({required String message}) async {
     final transactionTime = TKmTK.getTransactionTime();
-    final itb = BuilderItb.blob(_address, message, transactionTime);
+
+    var mapsBlob = {"platform": Platform.operatingSystem, "type": "text", "data": message};
+
+    final itb = BuilderItb.blob(_address, mapsBlob, transactionTime);
 
     return await _createGenericTransaction(itb);
   }
@@ -197,7 +199,9 @@ class TkmWalletAddress {
       final b64UrlHash = base64UrlEncode(hash);
 
       final transactionTime = TKmTK.getTransactionTime();
-      final itb = BuilderItb.blob(_address, b64UrlHash, transactionTime);
+
+      var mapsBlob = {"platform": Platform.operatingSystem, "type": "sha3-256", "data": b64UrlHash};
+      final itb = BuilderItb.blob(_address, jsonEncode(mapsBlob), transactionTime);
 
       return await _createGenericTransaction(itb);
     } catch (e) {
@@ -213,7 +217,10 @@ class TkmWalletAddress {
       String message = jsonEncode(tkmMetaData.toJson());
 
       final transactionTime = TKmTK.getTransactionTime();
-      final itb = BuilderItb.blob(_address, message, transactionTime);
+
+      var mapsBlob = {"platform": Platform.operatingSystem, "type": tkmMetaData.type, "data": tkmMetaData.data};
+
+      final itb = BuilderItb.blob(_address,  jsonEncode(mapsBlob), transactionTime);
 
       return await _createGenericTransaction(itb);
     } catch (e) {
