@@ -207,7 +207,7 @@
     },
     {
       "name": "equatable",
-      "rootUri": "file:///Users/mandreatta/.pub-cache/hosted/pub.dev/equatable-2.0.6",
+      "rootUri": "file:///Users/mandreatta/.pub-cache/hosted/pub.dev/equatable-2.0.7",
       "packageUri": "lib/",
       "languageVersion": "2.12"
     },
@@ -339,7 +339,7 @@
     },
     {
       "name": "io_takamaka_core_wallet",
-      "rootUri": "file:///Users/mandreatta/.pub-cache/hosted/pub.dev/io_takamaka_core_wallet-2.0.10",
+      "rootUri": "file:///Users/mandreatta/.pub-cache/hosted/pub.dev/io_takamaka_core_wallet-2.0.11",
       "packageUri": "lib/",
       "languageVersion": "2.19"
     },
@@ -357,9 +357,9 @@
     },
     {
       "name": "json_serializable",
-      "rootUri": "file:///Users/mandreatta/.pub-cache/hosted/pub.dev/json_serializable-6.8.0",
+      "rootUri": "file:///Users/mandreatta/.pub-cache/hosted/pub.dev/json_serializable-6.9.0",
       "packageUri": "lib/",
-      "languageVersion": "3.0"
+      "languageVersion": "3.5"
     },
     {
       "name": "leak_tracker",
@@ -447,7 +447,7 @@
     },
     {
       "name": "path_provider_android",
-      "rootUri": "file:///Users/mandreatta/.pub-cache/hosted/pub.dev/path_provider_android-2.2.12",
+      "rootUri": "file:///Users/mandreatta/.pub-cache/hosted/pub.dev/path_provider_android-2.2.14",
       "packageUri": "lib/",
       "languageVersion": "3.5"
     },
@@ -549,7 +549,7 @@
     },
     {
       "name": "shared_preferences",
-      "rootUri": "file:///Users/mandreatta/.pub-cache/hosted/pub.dev/shared_preferences-2.3.2",
+      "rootUri": "file:///Users/mandreatta/.pub-cache/hosted/pub.dev/shared_preferences-2.3.3",
       "packageUri": "lib/",
       "languageVersion": "3.4"
     },
@@ -705,7 +705,7 @@
     },
     {
       "name": "vm_service",
-      "rootUri": "file:///Users/mandreatta/.pub-cache/hosted/pub.dev/vm_service-14.2.5",
+      "rootUri": "file:///Users/mandreatta/.pub-cache/hosted/pub.dev/vm_service-14.2.4",
       "packageUri": "lib/",
       "languageVersion": "3.3"
     },
@@ -752,10 +752,10 @@
       "languageVersion": "3.5"
     }
   ],
-  "generated": "2024-11-21T15:41:57.619869Z",
+  "generated": "2024-11-29T14:04:33.124130Z",
   "generator": "pub",
-  "generatorVersion": "3.5.3",
+  "generatorVersion": "3.5.0",
   "flutterRoot": "file:///Users/mandreatta/Flutter",
-  "flutterVersion": "3.24.4-0.0.pre.2",
+  "flutterVersion": "3.24.0",
   "pubCache": "file:///Users/mandreatta/.pub-cache"
 }

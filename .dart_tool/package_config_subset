@@ -132,8 +132,8 @@ file:///Users/mandreatta/.pub-cache/hosted/pub.dev/encrypt-5.0.3/
 file:///Users/mandreatta/.pub-cache/hosted/pub.dev/encrypt-5.0.3/lib/
 equatable
 2.12
-file:///Users/mandreatta/.pub-cache/hosted/pub.dev/equatable-2.0.6/
-file:///Users/mandreatta/.pub-cache/hosted/pub.dev/equatable-2.0.6/lib/
+file:///Users/mandreatta/.pub-cache/hosted/pub.dev/equatable-2.0.7/
+file:///Users/mandreatta/.pub-cache/hosted/pub.dev/equatable-2.0.7/lib/
 exif
 2.12
 file:///Users/mandreatta/.pub-cache/hosted/pub.dev/exif-3.3.0/
@@ -208,8 +208,8 @@ file:///Users/mandreatta/.pub-cache/hosted/pub.dev/io-1.0.4/
 file:///Users/mandreatta/.pub-cache/hosted/pub.dev/io-1.0.4/lib/
 io_takamaka_core_wallet
 2.19
-file:///Users/mandreatta/.pub-cache/hosted/pub.dev/io_takamaka_core_wallet-2.0.10/
-file:///Users/mandreatta/.pub-cache/hosted/pub.dev/io_takamaka_core_wallet-2.0.10/lib/
+file:///Users/mandreatta/.pub-cache/hosted/pub.dev/io_takamaka_core_wallet-2.0.11/
+file:///Users/mandreatta/.pub-cache/hosted/pub.dev/io_takamaka_core_wallet-2.0.11/lib/
 js
 2.19
 file:///Users/mandreatta/.pub-cache/hosted/pub.dev/js-0.6.7/
@@ -219,9 +219,9 @@ json_annotation
 file:///Users/mandreatta/.pub-cache/hosted/pub.dev/json_annotation-4.9.0/
 file:///Users/mandreatta/.pub-cache/hosted/pub.dev/json_annotation-4.9.0/lib/
 json_serializable
-3.0
-file:///Users/mandreatta/.pub-cache/hosted/pub.dev/json_serializable-6.8.0/
-file:///Users/mandreatta/.pub-cache/hosted/pub.dev/json_serializable-6.8.0/lib/
+3.5
+file:///Users/mandreatta/.pub-cache/hosted/pub.dev/json_serializable-6.9.0/
+file:///Users/mandreatta/.pub-cache/hosted/pub.dev/json_serializable-6.9.0/lib/
 leak_tracker
 3.2
 file:///Users/mandreatta/.pub-cache/hosted/pub.dev/leak_tracker-10.0.5/
@@ -280,8 +280,8 @@ file:///Users/mandreatta/.pub-cache/hosted/pub.dev/path_provider-2.1.5/
 file:///Users/mandreatta/.pub-cache/hosted/pub.dev/path_provider-2.1.5/lib/
 path_provider_android
 3.5
-file:///Users/mandreatta/.pub-cache/hosted/pub.dev/path_provider_android-2.2.12/
-file:///Users/mandreatta/.pub-cache/hosted/pub.dev/path_provider_android-2.2.12/lib/
+file:///Users/mandreatta/.pub-cache/hosted/pub.dev/path_provider_android-2.2.14/
+file:///Users/mandreatta/.pub-cache/hosted/pub.dev/path_provider_android-2.2.14/lib/
 path_provider_foundation
 3.2
 file:///Users/mandreatta/.pub-cache/hosted/pub.dev/path_provider_foundation-2.4.0/
@@ -348,8 +348,8 @@ file:///Users/mandreatta/.pub-cache/hosted/pub.dev/sha3-0.2.0/
 file:///Users/mandreatta/.pub-cache/hosted/pub.dev/sha3-0.2.0/lib/
 shared_preferences
 3.4
-file:///Users/mandreatta/.pub-cache/hosted/pub.dev/shared_preferences-2.3.2/
-file:///Users/mandreatta/.pub-cache/hosted/pub.dev/shared_preferences-2.3.2/lib/
+file:///Users/mandreatta/.pub-cache/hosted/pub.dev/shared_preferences-2.3.3/
+file:///Users/mandreatta/.pub-cache/hosted/pub.dev/shared_preferences-2.3.3/lib/
 shared_preferences_android
 3.5
 file:///Users/mandreatta/.pub-cache/hosted/pub.dev/shared_preferences_android-2.3.3/
@@ -448,8 +448,8 @@ file:///Users/mandreatta/.pub-cache/hosted/pub.dev/vector_math-2.1.4/
 file:///Users/mandreatta/.pub-cache/hosted/pub.dev/vector_math-2.1.4/lib/
 vm_service
 3.3
-file:///Users/mandreatta/.pub-cache/hosted/pub.dev/vm_service-14.2.5/
-file:///Users/mandreatta/.pub-cache/hosted/pub.dev/vm_service-14.2.5/lib/
+file:///Users/mandreatta/.pub-cache/hosted/pub.dev/vm_service-14.2.4/
+file:///Users/mandreatta/.pub-cache/hosted/pub.dev/vm_service-14.2.4/lib/
 watcher
 3.0
 file:///Users/mandreatta/.pub-cache/hosted/pub.dev/watcher-1.1.0/
