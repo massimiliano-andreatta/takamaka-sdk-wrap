@@ -8,3 +8,10 @@ class TkmWalletApiEndpoint {
 
   const TkmWalletApiEndpoint(this.path, this.method);
 }
+
+class TkmChatApiEndpoint {
+  final String path;
+  final HttpMethods method;
+
+  const TkmChatApiEndpoint(this.path, this.method);
+}

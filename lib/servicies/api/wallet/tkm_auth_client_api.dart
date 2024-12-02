@@ -1,3 +1,5 @@
+library takamaka_sdk_wrap;
+
 import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
 import 'package:either_dart/either.dart';

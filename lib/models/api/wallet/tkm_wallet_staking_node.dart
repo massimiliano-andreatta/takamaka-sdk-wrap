@@ -1,5 +1,9 @@
 library takamaka_sdk_wrap;
 
+import 'dart:typed_data';
+
+import 'package:io_takamaka_core_wallet/io_takamaka_core_wallet.dart';
+
 class TkmWalletStakingNode {
   int? activeStake;
   String? address;
@@ -28,6 +32,8 @@ class TkmWalletStakingNode {
     this.stakeToActivation,
     this.stakeUntilPenalty,
   });
+
+  ByteBuffer? get identiconData => (WalletUtils.testBitMap(this.shortAddress ?? "")).buffer;
 
   TkmWalletStakingNode.fromJson(Map<String, dynamic> json)
       : activeStake = json['activeStake'],

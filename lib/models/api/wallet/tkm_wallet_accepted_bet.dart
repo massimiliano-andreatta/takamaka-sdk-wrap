@@ -1,4 +1,7 @@
 import 'dart:convert';
+import 'dart:typed_data';
+
+import 'package:io_takamaka_core_wallet/io_takamaka_core_wallet.dart';
 
 class TkmWalletAcceptedBet {
   final String holderAddressURL64;
@@ -8,6 +11,8 @@ class TkmWalletAcceptedBet {
     required this.holderAddressURL64,
     required this.coveredBets,
   });
+
+  ByteBuffer? get identiconNode => (WalletUtils.testBitMap(coveredBets.keys.first ?? "")).buffer;
 
   // Metodo per creare un'istanza di TkmWalletAcceptedBet da un JSON
   factory TkmWalletAcceptedBet.fromJson(Map<String, dynamic> json) {
