@@ -278,6 +278,14 @@ class TkmWalletAddress {
     return feeBean;
   }
 
+  Future<double> calculateTransactionFeeTK(TransactionBean tb) async {
+    String tbJson = jsonEncode(tb.toJson());
+    TransactionBox transactionBox = await TkmWallet.verifyTransactionIntegrity(tbJson, _keypair);
+    FeeBean feeBean = TransactionFeeCalculator.getFeeBean(transactionBox);
+    var cost = TransactionFeeCalculator.getCostInTK(feeBean);
+    return cost;
+  }
+
   Future<TransactionInput> prepareTransactionForSend(TransactionBean tb) async {
     String tbJson = jsonEncode(tb.toJson());
     String payHexBody = StringUtilities.convertToHex(tbJson);
