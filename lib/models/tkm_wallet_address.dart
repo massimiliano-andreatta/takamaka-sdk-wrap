@@ -78,12 +78,18 @@ class TkmWalletAddress {
   Color? get primaryColor => _primaryColor;
 
   /// Returns the display name of the wallet
-  String get name => _name;
+  String get name {
+    if (index == 0) {
+      return "MAIN ADDRESS";
+    } else {
+      return "Address $_index${name.isNotEmpty ? " ($_name)" : ""}";
+    }
+  }
 
   String get walletName => _walletName;
 
   /// Sets the wallet's display name
-  set name(String value) => _name = value.isEmpty ? "Address $_index" : value;
+  set name(String value) => _name = value;
 
   /// Returns the wallet's visibility status
   bool get visible => _index == 0 ? true : _visible;
