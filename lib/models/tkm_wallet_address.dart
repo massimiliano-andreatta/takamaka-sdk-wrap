@@ -80,9 +80,9 @@ class TkmWalletAddress {
   /// Returns the display name of the wallet
   String get name {
     if (index == 0) {
-      return "MAIN ADDRESS";
+      return "Main Address";
     } else {
-      return "Address $_index${_name.isNotEmpty ? " ($_name)" : ""}";
+      return _name.isNotEmpty ? "$_name (Address $_index)" : "Address $_index";
     }
   }
 
