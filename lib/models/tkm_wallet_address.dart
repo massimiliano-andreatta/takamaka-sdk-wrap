@@ -82,7 +82,7 @@ class TkmWalletAddress {
     if (index == 0) {
       return "MAIN ADDRESS";
     } else {
-      return "Address $_index${name.isNotEmpty ? " ($_name)" : ""}";
+      return "Address $_index${_name.isNotEmpty ? " ($_name)" : ""}";
     }
   }
 
