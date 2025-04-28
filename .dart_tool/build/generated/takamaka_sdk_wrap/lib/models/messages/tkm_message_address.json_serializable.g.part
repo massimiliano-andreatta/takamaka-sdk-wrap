@@ -1,0 +1,13 @@
+// **************************************************************************
+// JsonSerializableGenerator
+// **************************************************************************
+
+TkmMessageAddress _$TkmMessageAddressFromJson(Map<String, dynamic> json) =>
+    TkmMessageAddress(
+      address: json['address'] as String,
+    );
+
+Map<String, dynamic> _$TkmMessageAddressToJson(TkmMessageAddress instance) =>
+    <String, dynamic>{
+      'address': instance.address,
+    };

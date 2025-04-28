@@ -226,7 +226,7 @@ class TkmWalletAddress {
 
       var mapsBlob = {"platform": Platform.operatingSystem, "type": tkmMetaData.type, "data": tkmMetaData.data};
 
-      final itb = BuilderItb.blob(_address,  jsonEncode(mapsBlob), transactionTime);
+      final itb = BuilderItb.media(_address,  jsonEncode(mapsBlob), transactionTime);
 
       return await _createGenericTransaction(itb);
     } catch (e) {
