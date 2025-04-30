@@ -512,6 +512,7 @@ class TkmWalletService {
         ? wallets
             .firstWhere((wallet) => wallet.isDefault == true)
             .addresses
+            .where((address) => address.visible == true)
             .toList()
         : [];
 
