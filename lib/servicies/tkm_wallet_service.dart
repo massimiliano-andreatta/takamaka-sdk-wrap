@@ -39,44 +39,60 @@ class TkmWalletService {
 
   TkmWalletService({required TkmWalletEnumEnvironments currentEnv}) {
     _clientApi = TkmWalletClientApi(currentEnv: currentEnv, dicClient: Dio());
-    _clientApiAuth = TkmWalletAuthClientApi(currentEnv: currentEnv, dicClient: Dio());
+    _clientApiAuth =
+        TkmWalletAuthClientApi(currentEnv: currentEnv, dicClient: Dio());
   }
 
-  static Future<TkmWalletWrap?> restoreWalletFromKeyWords({required String walletName, required String password, required List<String> words}) {
-    return TkmWalletWrap.restoreFromKeyWords(wordList: words, walletName: walletName, password: password);
+  static Future<TkmWalletWrap?> restoreWalletFromKeyWords(
+      {required String walletName,
+      required String password,
+      required List<String> words}) {
+    return TkmWalletWrap.restoreFromKeyWords(
+        wordList: words, walletName: walletName, password: password);
   }
 
-  static Future<TkmWalletWrap?> restoreWalletFromFile({required File walletFile, required String walletName, required String password}) {
-    return TkmWalletWrap.restoreWalletFromFile(walletFile: walletFile, walletName: walletName, password: password);
+  static Future<TkmWalletWrap?> restoreWalletFromFile(
+      {required File walletFile,
+      required String walletName,
+      required String password}) {
+    return TkmWalletWrap.restoreWalletFromFile(
+        walletFile: walletFile, walletName: walletName, password: password);
   }
 
   static List<String> getAllWords() {
     return DictionaryReader.readDictionary();
   }
 
-  static Future<Either<TkmFailure, TkmLoginResponse>> authLogin({required TkmLoginRequest loginRequest}) async {
+  static Future<Either<TkmFailure, TkmLoginResponse>> authLogin(
+      {required TkmLoginRequest loginRequest}) async {
     return _clientApiAuth.login(loginRequest);
   }
 
-  static Future<Either<TkmFailure, TkmSyncAddressResponse>> authSyncAddress({required String token, required TkmWalletAddress address}) async {
+  static Future<Either<TkmFailure, TkmSyncAddressResponse>> authSyncAddress(
+      {required String token, required TkmWalletAddress address}) async {
     return _clientApiAuth.syncAddress(token, address);
   }
 
-  static Future<Either<TkmFailure, TkmLoginResponse>> authRefreshToken({required String refreshToken, required String username, required String deviceId}) async  {
+  static Future<Either<TkmFailure, TkmLoginResponse>> authRefreshToken(
+      {required String refreshToken,
+      required String username,
+      required String deviceId}) async {
     return _clientApiAuth.refreshToken(refreshToken, username, deviceId);
   }
 
-  static Future<Either<TkmFailure, List<TkmAddressResponse>>> authGetListAddressRegisterForUser({required String token}) async {
+  static Future<Either<TkmFailure, List<TkmAddressResponse>>>
+      authGetListAddressRegisterForUser({required String token}) async {
     return _clientApiAuth.getListAddressRegisterForUser(token);
   }
 
-  static Future<Either<TkmFailure, TkmInfoUserResponse>> authGetInfoUser({required String token}) async {
+  static Future<Either<TkmFailure, TkmInfoUserResponse>> authGetInfoUser(
+      {required String token}) async {
     return _clientApiAuth.getInfoUser(token);
   }
 
-  static Future<Either<TkmFailure, List<TkmNotificationResponse>>> authGetNotifications({required String? token}) async {
-
-  return Right(TkmMockGenerate.getNotifications());
+  static Future<Either<TkmFailure, List<TkmNotificationResponse>>>
+      authGetNotifications({required String? token}) async {
+    return Right(TkmMockGenerate.getNotifications());
 
     return _clientApiAuth.authGetNotifications(token);
   }
@@ -93,7 +109,8 @@ class TkmWalletService {
   ///
   /// Returns:
   /// - A [TkmWalletWrap] object representing the newly created wallet.
-  static Future<TkmWalletWrap> createWallet({required String walletName, required String password}) async {
+  static Future<TkmWalletWrap> createWallet(
+      {required String walletName, required String password}) async {
     // Retrieve all existing wallets from storage
     List<TkmWalletWrap> wallets = await getWallets();
 
@@ -101,7 +118,8 @@ class TkmWalletService {
     bool walletExists = wallets.any((w) => w.walletName == walletName);
     if (walletExists) {
       // If a wallet with the same name exists, throw an exception
-      throw WalletAlreadyExistsException("A wallet with the name '$walletName' already exists.");
+      throw WalletAlreadyExistsException(
+          "A wallet with the name '$walletName' already exists.");
     }
 
     // Create a new wallet with the provided name and password
@@ -133,17 +151,22 @@ class TkmWalletService {
     }
 
     // Batch size to process in parallel
-    const batchSize = 10; // Puoi cambiare la dimensione del batch in base alle tue necessità
+    const batchSize =
+        10; // Puoi cambiare la dimensione del batch in base alle tue necessità
 
     List<TkmWalletWrap> wallets = [];
 
     // Esegui la decodifica in batch
     for (int i = 0; i < walletJsonList.length; i += batchSize) {
-      final batch = walletJsonList.sublist(i, i + batchSize > walletJsonList.length ? walletJsonList.length : i + batchSize);
+      final batch = walletJsonList.sublist(
+          i,
+          i + batchSize > walletJsonList.length
+              ? walletJsonList.length
+              : i + batchSize);
 
       // Decodifica il batch in parallelo
       List<TkmWalletWrap> batchWallets = await Future.wait(batch.map(
-            (walletJson) async => TkmWalletWrap.fromJson(jsonDecode(walletJson)),
+        (walletJson) async => TkmWalletWrap.fromJson(jsonDecode(walletJson)),
       ));
 
       wallets.addAll(batchWallets);
@@ -167,13 +190,18 @@ class TkmWalletService {
     List<String>? walletJsonList = prefs.getStringList(_walletKey);
     walletJsonList ??= [];
 
+    if (walletJsonList.isEmpty) {
+      wallet.isDefault = true;
+    }
+
     // Convert JSON strings into wallet objects asynchronously
     List<TkmWalletWrap> wallets = await Future.wait(walletJsonList.map(
       (walletJson) async => TkmWalletWrap.fromJson(jsonDecode(walletJson)),
     ));
 
     // Find if a wallet with the same name already exists
-    int existingWalletIndex = wallets.indexWhere((w) => w.walletName == wallet.walletName);
+    int existingWalletIndex =
+        wallets.indexWhere((w) => w.walletName == wallet.walletName);
 
     if (existingWalletIndex != -1) {
       // If it exists, update the existing wallet
@@ -184,7 +212,8 @@ class TkmWalletService {
     }
 
     // Convert the updated wallet list back to JSON and save it
-    List<String> updatedWalletJsonList = wallets.map((w) => jsonEncode(w.toJson())).toList();
+    List<String> updatedWalletJsonList =
+        wallets.map((w) => jsonEncode(w.toJson())).toList();
 
     await prefs.setStringList(_walletKey, updatedWalletJsonList);
   }
@@ -212,7 +241,8 @@ class TkmWalletService {
     wallets.removeWhere((wallet) => wallet.walletName == walletName);
 
     // Save the updated wallet list back to SharedPreferences
-    List<String> updatedWalletJsonList = wallets.map((w) => jsonEncode(w.toJson())).toList();
+    List<String> updatedWalletJsonList =
+        wallets.map((w) => jsonEncode(w.toJson())).toList();
 
     await prefs.setStringList(_walletKey, updatedWalletJsonList);
   }
@@ -225,7 +255,8 @@ class TkmWalletService {
   /// Parameters:
   /// - [wallet]: The wallet to which the address will be added.
   /// - [index]: The index at which to add the new address.
-  static Future<void> addAddressToWallet({required TkmWalletWrap walletName, required int index}) async {
+  static Future<void> addAddressToWallet(
+      {required TkmWalletWrap walletName, required int index}) async {
     // Retrieve all wallets from SharedPreferences
     List<TkmWalletWrap> wallets = await getWallets();
 
@@ -249,14 +280,16 @@ class TkmWalletService {
   ///
   /// Returns:
   /// - A [TkmWalletWrap] object representing the requested wallet.
-  static Future<TkmWalletWrap> getWalletByName({required String walletName}) async {
+  static Future<TkmWalletWrap> getWalletByName(
+      {required String walletName}) async {
     // Retrieve all wallets from SharedPreferences
     List<TkmWalletWrap> wallets = await getWallets();
 
     // Find and return the wallet by its name, or throw an exception if not found
     return wallets.firstWhere(
       (w) => w.walletName == walletName,
-      orElse: () => throw WalletNotFoundException("Wallet $walletName not found"),
+      orElse: () =>
+          throw WalletNotFoundException("Wallet $walletName not found"),
     );
   }
 
@@ -337,7 +370,8 @@ class TkmWalletService {
   ///
   /// Returns:
   /// - A [Future<TkmWalletBalance>] containing the balance for the specified address.
-  static Future<TkmWalletBalance?> callApiGetBalance({required String address}) async {
+  static Future<TkmWalletBalance?> callApiGetBalance(
+      {required String address}) async {
     // Request the balance from the API
     var result = await _clientApi.getBalance(address: address);
     return result;
@@ -350,7 +384,8 @@ class TkmWalletService {
   ///
   /// Returns:
   /// - A [Future<TkmWalletBlockchainSettings>] containing the blockchain settings.
-  static Future<TkmWalletBlockchainSettings?> callApiGetBlockchainSettings() async {
+  static Future<TkmWalletBlockchainSettings?>
+      callApiGetBlockchainSettings() async {
     // Request the blockchain settings from the API
     var result = await _clientApi.getBlockchainSettings();
     return result;
@@ -366,7 +401,8 @@ class TkmWalletService {
   ///
   /// Returns:
   /// - A [Future<TkmWalletCurrenciesChange>] containing the result of the currency change.
-  static Future<TkmWalletCurrenciesChange?> callApiGetCurrenciesExchangeRate() async {
+  static Future<TkmWalletCurrenciesChange?>
+      callApiGetCurrenciesExchangeRate() async {
     // Request a currency change from the API
     var result = await _clientApi.getCurrenciesExchangeRate();
     return result;
@@ -386,11 +422,13 @@ class TkmWalletService {
   /// Returns:
   /// A Future that resolves to an instance of TkmTransactionTransactionResult,
   /// which contains the result of the transaction send operation.
-  static Future<TkmTransactionTransactionResult> callApiSendingTransaction({required TransactionInput transactionSend}) async {
+  static Future<TkmTransactionTransactionResult> callApiSendingTransaction(
+      {required TransactionInput transactionSend}) async {
     // Send the transaction via the API and retrieve the result
     // This uses the _clientApi instance to call the sendingTransaction method,
     // passing the transactionSend parameter. This method handles the actual API call.
-    var result = await _clientApi.sendingTransaction(transactionSend: transactionSend);
+    var result =
+        await _clientApi.sendingTransaction(transactionSend: transactionSend);
 
     // Return the result of the API call
     // The result will include information such as transaction status,
@@ -406,9 +444,11 @@ class TkmWalletService {
   }
 
   // Calls the API to retrieve a node's Qtesla address based on its short address
-  static Future<String?> callApiRetriveNodeQteslaAddress({required String shortAddressNode}) async {
+  static Future<String?> callApiRetriveNodeQteslaAddress(
+      {required String shortAddressNode}) async {
     // Request the Qtesla address of the node from the API
-    var result = await _clientApi.retriveNodeQteslaAddress(shortAddressNode: shortAddressNode);
+    var result = await _clientApi.retriveNodeQteslaAddress(
+        shortAddressNode: shortAddressNode);
     return result;
   }
 
@@ -422,7 +462,8 @@ class TkmWalletService {
   /// Returns:
   /// - A [Future<List<TkmWalletTransaction>>] that resolves to a list of transactions matching the search criteria.
   ///   If no transactions are found or an error occurs, an empty list will be returned.
-  static Future<List<TkmWalletTransaction>> callApiSearchTransactions({required String text}) async {
+  static Future<List<TkmWalletTransaction>> callApiSearchTransactions(
+      {required String text}) async {
     // Request the list of transactions from the API based on parameters
     var result = await _clientApi.searchTransactions(text: text);
     return result;
@@ -433,19 +474,24 @@ class TkmWalletService {
   /// and combines them into a single list.
   ///
   /// Returns a list of TkmWalletAddress objects that are visible.
-  static Future<List<TkmWalletAddress>> getAddressesForCardPresentation() async {
+  static Future<List<TkmWalletAddress>>
+      getAddressesForCardPresentation() async {
     List<TkmWalletAddress> addresses = [];
 
     // Get the list of TkmWalletWrap
     List<TkmWalletWrap> wallets = await getWallets();
 
     // Iterate through each TkmWalletWrap, filter visible addresses, and add them to the list
-    addresses = wallets.expand((wallet) => wallet.addresses.where((address) => address.visible == true)).toList();
+    addresses = wallets
+        .expand((wallet) =>
+            wallet.addresses.where((address) => address.visible == true))
+        .toList();
 
     return addresses;
   }
 
-  static Future<List<TkmWalletAcceptedBet>> getAcceptedBets({required String address}) async {
+  static Future<List<TkmWalletAcceptedBet>> getAcceptedBets(
+      {required String address}) async {
     // Request the list of transactions from the API based on parameters
     var result = await _clientApi.getAcceptedBets(address: address);
     return result;

@@ -17,6 +17,7 @@ class TkmWalletWrap {
   // Variables for wallet name and password
   late final String _walletName;
   late final String? _password;
+  late bool _isDefault = false;
 
   late final String? _hash;
 
@@ -29,10 +30,12 @@ class TkmWalletWrap {
 
   // Constructor with wallet name and password
   TkmWalletWrap(this._walletName, this._password);
-  TkmWalletWrap.restoreWithWords(this._walletName, this._password, this._generatedWordsPreInitWallet);
+  TkmWalletWrap.restoreWithWords(
+      this._walletName, this._password, this._generatedWordsPreInitWallet);
 
   // Constructor that accepts seed and pre-existing wallet objects
-  TkmWalletWrap.withNameSeedAndAddresses(this._walletName, this._seed, List<TkmWalletAddress> addresses) {
+  TkmWalletWrap.withNameSeedAndAddresses(this._walletName, this._seed,
+      List<TkmWalletAddress> addresses, this._isDefault) {
     _addresses.addAll(addresses); // Add the passed wallets to the list
   }
 
@@ -54,6 +57,14 @@ class TkmWalletWrap {
     return _hash;
   }
 
+  bool get isDefault {
+    return _isDefault;
+  }
+
+  set isDefault(bool isDefault) {
+    _isDefault = isDefault;
+  }
+
   // Getter for wallets that are visible
   List<TkmWalletAddress> get visibleAddresses {
     return _addresses.where((wallet) => wallet.visible).toList();
@@ -68,7 +79,8 @@ class TkmWalletWrap {
   Future<File> getFile() async {
     await writeEncryptedKeyFiles();
     String separator = path.separator;
-    String fullPath = _walletDirectory + separator + walletName + _walletExtension;
+    String fullPath =
+        _walletDirectory + separator + walletName + _walletExtension;
     return File(fullPath);
   }
 
@@ -76,24 +88,37 @@ class TkmWalletWrap {
     var concat = _generatedWordsPreInitWallet.join(" ");
     KeyBean kb = KeyBean("0.1", "POWSEED", "Ed25519BC", _seed!, concat);
     String separator = path.separator;
-    String fullPath = _walletDirectory + separator + walletName + _walletExtension;
-    await WalletUtils.writeEncryptedKeyFiles(fullPath, _walletDirectory, _walletName, _walletExtension, kb, _password!);
+    String fullPath =
+        _walletDirectory + separator + walletName + _walletExtension;
+    await WalletUtils.writeEncryptedKeyFiles(fullPath, _walletDirectory,
+        _walletName, _walletExtension, kb, _password!);
   }
 
-  static Future<TkmWalletWrap> restoreFromKeyWords({required List<String> wordList, required String walletName, required String password}) async {
-    var walletWrap = TkmWalletWrap.restoreWithWords(walletName, password, wordList);
+  static Future<TkmWalletWrap> restoreFromKeyWords(
+      {required List<String> wordList,
+      required String walletName,
+      required String password}) async {
+    var walletWrap =
+        TkmWalletWrap.restoreWithWords(walletName, password, wordList);
     await walletWrap.initializeWallet();
     return walletWrap;
   }
 
-  static Future<TkmWalletWrap> restoreWalletFromFile({required File walletFile, required String walletName, required String password}) async {
+  static Future<TkmWalletWrap> restoreWalletFromFile(
+      {required File walletFile,
+      required String walletName,
+      required String password}) async {
     String encriptedWallet = await FileSystemUtils.readFile(walletFile.path);
-    String decriptedString = CryptoMisc.descryptWallet(encriptedWallet, password);
+    String decriptedString =
+        CryptoMisc.descryptWallet(encriptedWallet, password);
 
     dynamic a = jsonDecode(decriptedString);
     KeyBean kb = KeyBean.fromJson(a);
 
-    var walletWrap = TkmWalletWrap.restoreFromKeyWords(walletName: walletName, password: password, wordList: kb.words.split(" "));
+    var walletWrap = TkmWalletWrap.restoreFromKeyWords(
+        walletName: walletName,
+        password: password,
+        wordList: kb.words.split(" "));
     return walletWrap;
   }
 
@@ -108,7 +133,8 @@ class TkmWalletWrap {
       }
     }
 
-    if (_generatedWordsPreInitWallet.isNotEmpty && (_seed == null || _seed!.isEmpty)) {
+    if (_generatedWordsPreInitWallet.isNotEmpty &&
+        (_seed == null || _seed!.isEmpty)) {
       var concat = _generatedWordsPreInitWallet.join(" ");
       _seed = await WalletUtils.generateSeedPWH(_generatedWordsPreInitWallet);
       kb = KeyBean("0.1", "POWSEED", "Ed25519BC", _seed!, concat);
@@ -127,12 +153,15 @@ class TkmWalletWrap {
   Future<bool> removeAddress(TkmWalletAddress address) async {
     if (_seed != null) {
       if (address.index == 0) {
-        throw InvalidIndexException("Index 0 is not allowed for remove address wallet.");
+        throw InvalidIndexException(
+            "Index 0 is not allowed for remove address wallet.");
       }
 
-      bool isIndexAlreadyUsed = _addresses.any((ele) => ele.index == address.index);
+      bool isIndexAlreadyUsed =
+          _addresses.any((ele) => ele.index == address.index);
       if (isIndexAlreadyUsed == false) {
-        throw DuplicateIndexException("Index ${address.index} is not already used by wallet.");
+        throw DuplicateIndexException(
+            "Index ${address.index} is not already used by wallet.");
       }
 
       _addresses.remove(address);
@@ -149,15 +178,18 @@ class TkmWalletWrap {
     if (_seed != null) {
       // Index 0 is reserved, throw an exception if trying to use it
       if (index == 0) {
-        throw InvalidIndexException("Index 0 is not allowed for creating a wallet.");
+        throw InvalidIndexException(
+            "Index 0 is not allowed for creating a wallet.");
       }
 
       // Check if the given index is already used by another wallet
-      bool isIndexAlreadyUsed = _addresses.any((wallet) => wallet.index == index);
+      bool isIndexAlreadyUsed =
+          _addresses.any((wallet) => wallet.index == index);
 
       // If the index is already used, throw a duplicate index exception
       if (isIndexAlreadyUsed) {
-        throw DuplicateIndexException("Index $index is already used by wallet.");
+        throw DuplicateIndexException(
+            "Index $index is already used by wallet.");
       }
 
       // Create and initialize a new wallet with the provided index
@@ -174,8 +206,10 @@ class TkmWalletWrap {
   // Method to convert the wallet wrapper object into a JSON format
   Map<String, dynamic> toJson() {
     // Convert each wallet object to JSON
-    List<Map<String, dynamic>> jsonList = _addresses.map((wallet) => wallet.toJson()).toList();
+    List<Map<String, dynamic>> jsonList =
+        _addresses.map((wallet) => wallet.toJson()).toList();
     return {
+      'isDefault': _isDefault,
       'walletName': _walletName,
       'seed': _seed,
       'addresses': jsonList // List of wallets in JSON format
@@ -186,7 +220,9 @@ class TkmWalletWrap {
   static Future<TkmWalletWrap> fromJson(Map<String, dynamic> json) async {
     // Create the wallet wrapper with seed and wallet objects from the JSON
     List<TkmWalletAddress> addresses = await Future.wait(
-      (json['addresses'] as List).map((walletJson) => TkmWalletAddress.fromJson(walletJson)).toList(),
+      (json['addresses'] as List)
+          .map((walletJson) => TkmWalletAddress.fromJson(walletJson))
+          .toList(),
     );
 
     // Return the constructed wallet wrapper object
@@ -194,6 +230,7 @@ class TkmWalletWrap {
       json['walletName'],
       json['seed'],
       addresses,
+      json['isDefault'],
     );
   }
 }
