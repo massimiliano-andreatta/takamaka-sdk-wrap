@@ -230,7 +230,7 @@ class TkmWalletWrap {
       json['walletName'],
       json['seed'],
       addresses,
-      json['isDefault'],
+      json['isDefault'] ?? false,
     );
   }
 }

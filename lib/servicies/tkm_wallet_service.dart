@@ -172,6 +172,13 @@ class TkmWalletService {
       wallets.addAll(batchWallets);
     }
 
+    if (wallets.isNotEmpty) {
+      bool isDefault = wallets.any((w) => w.isDefault == true);
+      if (!isDefault) {
+        wallets[0].isDefault = true;
+      }
+    }
+
     return wallets;
   }
 
@@ -243,6 +250,13 @@ class TkmWalletService {
     // Save the updated wallet list back to SharedPreferences
     List<String> updatedWalletJsonList =
         wallets.map((w) => jsonEncode(w.toJson())).toList();
+
+    if (wallets.isNotEmpty) {
+      bool isDefault = wallets.any((w) => w.isDefault == true);
+      if (!isDefault) {
+        wallets[0].isDefault = true;
+      }
+    }
 
     await prefs.setStringList(_walletKey, updatedWalletJsonList);
   }
@@ -478,14 +492,28 @@ class TkmWalletService {
       getAddressesForCardPresentation() async {
     List<TkmWalletAddress> addresses = [];
 
-    // Get the list of TkmWalletWrap
     List<TkmWalletWrap> wallets = await getWallets();
 
-    // Iterate through each TkmWalletWrap, filter visible addresses, and add them to the list
     addresses = wallets
         .expand((wallet) =>
             wallet.addresses.where((address) => address.visible == true))
         .toList();
+
+    return addresses;
+  }
+
+  static Future<List<TkmWalletAddress>>
+      getAddressesForCardPresentationWithWalletDefault() async {
+    List<TkmWalletAddress> addresses = [];
+
+    List<TkmWalletWrap> wallets = await getWallets();
+
+    addresses = wallets.isNotEmpty
+        ? wallets
+            .firstWhere((wallet) => wallet.isDefault == true)
+            .addresses
+            .toList()
+        : [];
 
     return addresses;
   }
