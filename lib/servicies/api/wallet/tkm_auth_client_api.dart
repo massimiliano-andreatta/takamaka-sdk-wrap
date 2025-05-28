@@ -18,12 +18,13 @@ class TkmWalletAuthClientApi {
   final Dio _dicClient;
   final TkmWalletEnumEnvironments _currentEnv;
 
-  TkmWalletAuthClientApi({required Dio dicClient, required TkmWalletEnumEnvironments currentEnv})
+  TkmWalletAuthClientApi(
+      {required Dio dicClient, required TkmWalletEnumEnvironments currentEnv})
       : _dicClient = dicClient,
         _currentEnv = currentEnv;
 
-
-  Future<Either<TkmFailure, List<TkmNotificationResponse>>> authGetNotifications(String? token) async {
+  Future<Either<TkmFailure, List<TkmNotificationResponse>>>
+      authGetNotifications(String? token) async {
     try {
       const enuEndpoint = TkmWalletEnumApiEndpoints.authGetInfoUser;
       var urlCall = _currentEnv.getFullApiUrl(enuEndpoint);
@@ -46,18 +47,20 @@ class TkmWalletAuthClientApi {
               .toList();
           return Right(notifications);
         case 401:
-          return Left(TkmAuthenticationFailure('Not authentication: ${response.statusCode}'));
+          return Left(TkmAuthenticationFailure(
+              'Not authentication: ${response.statusCode}'));
         case 500:
           return Left(TkmServerFailure());
         default:
-          return Left(TkmGenericFailure(null));
+          return Left(TkmGenericFailure(null, response.statusCode));
       }
     } catch (error) {
-      return Left(TkmGenericFailure(error.toString()));
+      return Left(TkmGenericFailure(error.toString(), null));
     }
   }
 
-  Future<Either<TkmFailure, TkmInfoUserResponse>> getInfoUser(String token) async {
+  Future<Either<TkmFailure, TkmInfoUserResponse>> getInfoUser(
+      String token) async {
     try {
       const enuEndpoint = TkmWalletEnumApiEndpoints.authGetInfoUser;
       var urlCall = _currentEnv.getFullApiUrl(enuEndpoint);
@@ -75,18 +78,20 @@ class TkmWalletAuthClientApi {
           final infoUserResponse = TkmInfoUserResponse.fromJson(response.data);
           return Right(infoUserResponse);
         case 401:
-          return Left(TkmAuthenticationFailure('Not authentication: ${response.statusCode}'));
+          return Left(TkmAuthenticationFailure(
+              'Not authentication: ${response.statusCode}'));
         case 500:
           return Left(TkmServerFailure());
         default:
-          return Left(TkmGenericFailure(null));
+          return Left(TkmGenericFailure(null, response.statusCode));
       }
     } catch (error) {
-      return Left(TkmGenericFailure(error.toString()));
+      return Left(TkmGenericFailure(error.toString(), null));
     }
   }
 
-  Future<Either<TkmFailure, TkmSyncAddressResponse>> syncAddress(String token, TkmWalletAddress address) async {
+  Future<Either<TkmFailure, TkmSyncAddressResponse>> syncAddress(
+      String token, TkmWalletAddress address) async {
     try {
       const enuEndpoint = TkmWalletEnumApiEndpoints.authSyncAddress;
       var urlCall = _currentEnv.getFullApiUrl(enuEndpoint);
@@ -94,31 +99,38 @@ class TkmWalletAuthClientApi {
 
       var headers = {'Authorization': "Bearer " + token};
 
-      var transactionBlobText = await address.createTransactionBlobSyncAddress();
+      var transactionBlobText =
+          await address.createTransactionBlobSyncAddress();
 
       var data = transactionBlobText.toJson();
 
-      var response = await _dicClient.request(urlCall, options: Options(method: methodCall.name, headers: headers), data: data);
+      var response = await _dicClient.request(urlCall,
+          options: Options(method: methodCall.name, headers: headers),
+          data: data);
 
       switch (response.statusCode) {
         case 200:
-          final syncAddressResponse = TkmSyncAddressResponse.fromJson(response.data);
+          final syncAddressResponse =
+              TkmSyncAddressResponse.fromJson(response.data);
           return Right(syncAddressResponse);
         case 401:
-          return Left(TkmAuthenticationFailure('Not authentication: ${response.statusCode}'));
+          return Left(TkmAuthenticationFailure(
+              'Not authentication: ${response.statusCode}'));
         case 500:
           return Left(TkmServerFailure());
         default:
-          return Left(TkmGenericFailure(null));
+          return Left(TkmGenericFailure(null, response.statusCode));
       }
     } catch (error) {
-      return Left(TkmGenericFailure(error.toString()));
+      return Left(TkmGenericFailure(error.toString(), null));
     }
   }
 
-  Future<Either<TkmFailure, List<TkmAddressResponse>>> getListAddressRegisterForUser(String token) async {
+  Future<Either<TkmFailure, List<TkmAddressResponse>>>
+      getListAddressRegisterForUser(String token) async {
     try {
-      const enuEndpoint = TkmWalletEnumApiEndpoints.authGetListAddressRegisterForUser;
+      const enuEndpoint =
+          TkmWalletEnumApiEndpoints.authGetListAddressRegisterForUser;
       var urlCall = _currentEnv.getFullApiUrl(enuEndpoint);
       var methodCall = _currentEnv.getHttpMethod(enuEndpoint);
 
@@ -136,18 +148,20 @@ class TkmWalletAuthClientApi {
               .toList();
           return Right(addresses);
         case 401:
-          return Left(TkmAuthenticationFailure('Not authentication: ${response.statusCode}'));
+          return Left(TkmAuthenticationFailure(
+              'Not authentication: ${response.statusCode}'));
         case 500:
           return Left(TkmServerFailure());
         default:
-          return Left(TkmGenericFailure(null));
+          return Left(TkmGenericFailure(null, response.statusCode));
       }
     } catch (error) {
-      return Left(TkmGenericFailure(error.toString()));
+      return Left(TkmGenericFailure(error.toString(), null));
     }
   }
 
-  Future<Either<TkmFailure, TkmLoginResponse>> login(TkmLoginRequest request) async {
+  Future<Either<TkmFailure, TkmLoginResponse>> login(
+      TkmLoginRequest request) async {
     try {
       const enuEndpoint = TkmWalletEnumApiEndpoints.authLogin;
       var urlCall = _currentEnv.getFullApiUrl(enuEndpoint);
@@ -166,35 +180,38 @@ class TkmWalletAuthClientApi {
           final loginResponse = TkmLoginResponse.fromJson(response.data);
           return Right(loginResponse);
         case 401:
-          return Left(TkmAuthenticationFailure('Login failed with status: ${response.statusCode}'));
+          return Left(TkmAuthenticationFailure(
+              'Login failed with status: ${response.statusCode}'));
         case 500:
           return Left(TkmServerFailure());
         default:
-          return Left(TkmGenericFailure(null));
+          return Left(TkmGenericFailure(null, response.statusCode));
       }
     } catch (error) {
-      return Left(TkmGenericFailure(error.toString()));
+      return Left(TkmGenericFailure(error.toString(), null));
     }
   }
 
   Future<Either<TkmFailure, TkmLoginResponse>> refreshToken(
-      String refreshToken,
-      String username,
-      String deviceId,
-      ) async {
+    String refreshToken,
+    String username,
+    String deviceId,
+  ) async {
     try {
       const enuEndpoint = TkmWalletEnumApiEndpoints.authRefreshToken;
       var urlCall = _currentEnv.getFullApiUrl(enuEndpoint);
       var methodCall = _currentEnv.getHttpMethod(enuEndpoint);
 
       // Calcolo del timestamp
-      final timestamp = (DateTime.now().millisecondsSinceEpoch ~/ 1000).toString();
+      final timestamp =
+          (DateTime.now().millisecondsSinceEpoch ~/ 1000).toString();
 
       // Concatenazione della stringa da firmare
       final stringToSign = '$username$deviceId$timestamp';
 
       // Generazione della firma
-      final secretKey = utf8.encode(refreshToken); // Usa `refreshToken` come chiave
+      final secretKey =
+          utf8.encode(refreshToken); // Usa `refreshToken` come chiave
       final bytesToSign = utf8.encode(stringToSign);
       final signature = Hmac(sha256, secretKey).convert(bytesToSign).toString();
 
@@ -226,15 +243,15 @@ class TkmWalletAuthClientApi {
 
           return Right(refreshResponse);
         case 401:
-          return Left(TkmAuthenticationFailure('Not authentication: ${response.statusCode}'));
+          return Left(TkmAuthenticationFailure(
+              'Not authentication: ${response.statusCode}'));
         case 500:
           return Left(TkmServerFailure());
         default:
-          return Left(TkmGenericFailure(null));
+          return Left(TkmGenericFailure(null, response.statusCode));
       }
     } catch (error) {
-      return Left(TkmGenericFailure(error.toString()));
+      return Left(TkmGenericFailure(error.toString(), null));
     }
   }
-
 }
