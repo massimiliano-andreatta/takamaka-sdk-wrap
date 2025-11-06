@@ -40,6 +40,9 @@ class TkmApiLogEntry extends Equatable {
   /// Tipo di API (wallet, auth, chat)
   final String? apiType;
 
+  /// Comando cURL equivalente alla chiamata
+  final String? curlCommand;
+
   TkmApiLogEntry({
     required this.requestTimestamp,
     this.responseTimestamp,
@@ -53,6 +56,7 @@ class TkmApiLogEntry extends Equatable {
     this.responseTimeMs,
     this.error,
     this.apiType,
+    this.curlCommand,
   });
 
   /// Crea una copia del log con alcuni campi modificati
@@ -69,6 +73,7 @@ class TkmApiLogEntry extends Equatable {
     int? responseTimeMs,
     String? error,
     String? apiType,
+    String? curlCommand,
   }) {
     return TkmApiLogEntry(
       requestTimestamp: requestTimestamp ?? this.requestTimestamp,
@@ -83,6 +88,7 @@ class TkmApiLogEntry extends Equatable {
       responseTimeMs: responseTimeMs ?? this.responseTimeMs,
       error: error ?? this.error,
       apiType: apiType ?? this.apiType,
+      curlCommand: curlCommand ?? this.curlCommand,
     );
   }
 
@@ -101,6 +107,7 @@ class TkmApiLogEntry extends Equatable {
       'responseTimeMs': responseTimeMs,
       'error': error,
       'apiType': apiType,
+      'curlCommand': curlCommand,
     };
   }
 
@@ -121,6 +128,7 @@ class TkmApiLogEntry extends Equatable {
       responseTimeMs: json['responseTimeMs'],
       error: json['error'],
       apiType: json['apiType'],
+      curlCommand: json['curlCommand'],
     );
   }
 
@@ -138,6 +146,7 @@ class TkmApiLogEntry extends Equatable {
         responseTimeMs,
         error,
         apiType,
+        curlCommand,
       ];
 
   @override
@@ -171,6 +180,11 @@ class TkmApiLogEntry extends Equatable {
     }
     if (responseBody != null) {
       buffer.writeln('Response Body: $responseBody');
+    }
+    if (curlCommand != null) {
+      buffer.writeln('');
+      buffer.writeln('cURL Command:');
+      buffer.writeln(curlCommand!);
     }
     buffer.writeln('====================');
     return buffer.toString();

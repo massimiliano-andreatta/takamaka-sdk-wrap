@@ -36,6 +36,9 @@ class TkmApiLoggerConfig {
   /// Se true, logga anche i query parameters
   final bool logQueryParams;
 
+  /// Se true, genera e include il comando cURL nei log
+  final bool includeCurlCommand;
+
   /// Massima lunghezza del body da loggare (0 = illimitato)
   final int maxBodyLength;
 
@@ -56,6 +59,7 @@ class TkmApiLoggerConfig {
     this.logBody = true,
     this.logHeaders = true,
     this.logQueryParams = true,
+    this.includeCurlCommand = true,
     this.maxBodyLength = 10000,
     this.excludeUrls = const [],
     this.excludeUrlPatterns = const [],
@@ -69,6 +73,7 @@ class TkmApiLoggerConfig {
       logLevel: TkmApiLogLevel.error,
       logBody: false,
       logHeaders: false,
+      includeCurlCommand: false,
     );
   }
 
@@ -78,6 +83,7 @@ class TkmApiLoggerConfig {
       logLevel: TkmApiLogLevel.verbose,
       logBody: true,
       logHeaders: true,
+      includeCurlCommand: true,
     );
   }
 
@@ -121,6 +127,7 @@ class TkmApiLoggerInterceptor extends Interceptor {
       requestHeaders: config.logHeaders ? _sanitizeHeaders(options.headers) : null,
       requestBody: _extractRequestBody(options, config.logLevel),
       apiType: config.apiType,
+      curlCommand: config.includeCurlCommand ? _generateCurlCommand(options) : null,
     );
 
     _logEntry(logEntry, 'REQUEST');
@@ -162,6 +169,7 @@ class TkmApiLoggerInterceptor extends Interceptor {
       responseBody: _extractResponseBody(response, config.logLevel),
       responseTimeMs: responseTimeMs,
       apiType: config.apiType,
+      curlCommand: config.includeCurlCommand ? _generateCurlCommand(response.requestOptions) : null,
     );
 
     _logEntry(logEntry, 'RESPONSE');
@@ -206,6 +214,7 @@ class TkmApiLoggerInterceptor extends Interceptor {
       responseTimeMs: responseTimeMs,
       error: err.toString(),
       apiType: config.apiType,
+      curlCommand: config.includeCurlCommand ? _generateCurlCommand(err.requestOptions) : null,
     );
 
     _logEntry(logEntry, 'ERROR');
@@ -290,6 +299,80 @@ class TkmApiLoggerInterceptor extends Interceptor {
     return sanitized;
   }
 
+  /// Genera il comando cURL equivalente alla richiesta
+  String _generateCurlCommand(RequestOptions options) {
+    final buffer = StringBuffer();
+    buffer.write('curl');
+
+    // Metodo HTTP
+    if (options.method.toUpperCase() != 'GET') {
+      buffer.write(' -X ${options.method.toUpperCase()}');
+    }
+
+    // URL completo (include query parameters se presenti)
+    final url = options.uri.toString();
+    buffer.write(" '$url'");
+
+    // Headers
+    if (options.headers.isNotEmpty) {
+      for (var entry in options.headers.entries) {
+        final key = entry.key;
+        final value = entry.value;
+        // Escape le virgolette nel valore
+        final escapedValue = value.toString().replaceAll("'", "'\\''");
+        buffer.write(" -H '$key: $escapedValue'");
+      }
+    }
+
+    // Body
+    if (options.data != null) {
+      String bodyData;
+      
+      if (options.data is FormData) {
+        final formData = options.data as FormData;
+        // Per FormData, costruiamo i parametri come form-urlencoded
+        final fields = <String>[];
+        for (var field in formData.fields) {
+          final escapedKey = field.key.replaceAll("'", "'\\''");
+          final escapedValue = field.value.replaceAll("'", "'\\''");
+          fields.add("$escapedKey=$escapedValue");
+        }
+        // Aggiungi anche i file se presenti
+        for (var file in formData.files) {
+          final escapedKey = file.key.replaceAll("'", "'\\''");
+          final fileName = file.value.filename ?? 'file';
+          fields.add("$escapedKey=@$fileName");
+        }
+        bodyData = fields.join('&');
+        buffer.write(" --data-urlencode '$bodyData'");
+      } else if (options.data is Map || options.data is List) {
+        // JSON
+        try {
+          bodyData = jsonEncode(options.data);
+          // Escape le virgolette
+          bodyData = bodyData.replaceAll("'", "'\\''");
+          buffer.write(" -d '$bodyData'");
+        } catch (e) {
+          bodyData = options.data.toString();
+          bodyData = bodyData.replaceAll("'", "'\\''");
+          buffer.write(" -d '$bodyData'");
+        }
+      } else if (options.data is String) {
+        // Stringa semplice
+        bodyData = options.data.toString();
+        bodyData = bodyData.replaceAll("'", "'\\''");
+        buffer.write(" -d '$bodyData'");
+      } else {
+        // Altri tipi
+        bodyData = options.data.toString();
+        bodyData = bodyData.replaceAll("'", "'\\''");
+        buffer.write(" -d '$bodyData'");
+      }
+    }
+
+    return buffer.toString();
+  }
+
   /// Logga una voce di log
   void _logEntry(TkmApiLogEntry entry, String type) {
     if (config.onLog != null) {
@@ -345,6 +428,7 @@ extension TkmApiLoggerConfigExtension on TkmApiLoggerConfig {
     bool? logBody,
     bool? logHeaders,
     bool? logQueryParams,
+    bool? includeCurlCommand,
     int? maxBodyLength,
     List<String>? excludeUrls,
     List<RegExp>? excludeUrlPatterns,
@@ -356,6 +440,7 @@ extension TkmApiLoggerConfigExtension on TkmApiLoggerConfig {
       logBody: logBody ?? this.logBody,
       logHeaders: logHeaders ?? this.logHeaders,
       logQueryParams: logQueryParams ?? this.logQueryParams,
+      includeCurlCommand: includeCurlCommand ?? this.includeCurlCommand,
       maxBodyLength: maxBodyLength ?? this.maxBodyLength,
       excludeUrls: excludeUrls ?? this.excludeUrls,
       excludeUrlPatterns: excludeUrlPatterns ?? this.excludeUrlPatterns,
