@@ -2,13 +2,11 @@ library takamaka_sdk_wrap;
 
 import 'dart:convert';
 import 'dart:io';
-import 'package:dio/dio.dart';
 import 'package:either_dart/either.dart';
 import 'package:io_takamaka_core_wallet/io_takamaka_core_wallet.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:takamaka_sdk_wrap/enums/tkm_wallet_enum_type_transaction.dart';
 import 'package:takamaka_sdk_wrap/enums/tkm_wallet_enums_api.dart';
-import 'package:takamaka_sdk_wrap/mock/tkm_mock_generate.dart';
 import 'package:takamaka_sdk_wrap/models/api/wallet/tkm_wallet_accepted_bet.dart';
 import 'package:takamaka_sdk_wrap/models/api/wallet/tkm_wallet_balance.dart';
 import 'package:takamaka_sdk_wrap/models/api/wallet/tkm_wallet_blockchain_settings.dart';
@@ -29,6 +27,7 @@ import 'package:takamaka_sdk_wrap/models/tkm_wallet_exceptions.dart';
 import 'package:takamaka_sdk_wrap/models/tkm_wallet_wrap.dart';
 import 'package:takamaka_sdk_wrap/servicies/api/wallet/tkm_auth_client_api.dart';
 import 'package:takamaka_sdk_wrap/servicies/api/wallet/tkm_wallet_client_api.dart';
+import 'package:takamaka_sdk_wrap/shared/tkm_api_logger.dart';
 
 class TkmWalletService {
   static const String _walletKey = 'wallets';
@@ -37,10 +36,24 @@ class TkmWalletService {
   static late TkmWalletClientApi _clientApi;
   static late TkmWalletAuthClientApi _clientApiAuth;
 
-  TkmWalletService({required TkmWalletEnumEnvironments currentEnv}) {
-    _clientApi = TkmWalletClientApi(currentEnv: currentEnv, dicClient: Dio());
-    _clientApiAuth =
-        TkmWalletAuthClientApi(currentEnv: currentEnv, dicClient: Dio());
+  TkmWalletService({
+    required TkmWalletEnumEnvironments currentEnv,
+    TkmApiLoggerConfig? loggerConfig,
+  }) {
+    _clientApi = TkmWalletClientApi(
+      currentEnv: currentEnv,
+      dicClient: TkmApiLogger.createDioClient(
+        config: loggerConfig,
+        apiType: 'wallet',
+      ),
+    );
+    _clientApiAuth = TkmWalletAuthClientApi(
+      currentEnv: currentEnv,
+      dicClient: TkmApiLogger.createDioClient(
+        config: loggerConfig,
+        apiType: 'auth',
+      ),
+    );
   }
 
   static Future<TkmWalletWrap?> restoreWalletFromKeyWords(
@@ -92,7 +105,7 @@ class TkmWalletService {
 
   static Future<Either<TkmFailure, List<TkmNotificationResponse>>>
       authGetNotifications({required String? token}) async {
-    return Right(TkmMockGenerate.getNotifications());
+    // return Right(TkmMockGenerate.getNotifications()); // Mock disabilitato
 
     return _clientApiAuth.authGetNotifications(token);
   }
