@@ -2,7 +2,6 @@ library takamaka_sdk_wrap;
 
 import 'dart:convert';
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
 import 'package:takamaka_sdk_wrap/models/api/tkm_api_log_entry.dart';
 
 /// Livelli di log disponibili
@@ -296,9 +295,8 @@ class TkmApiLoggerInterceptor extends Interceptor {
     if (config.onLog != null) {
       config.onLog!(entry);
     } else {
-      if (kDebugMode) {
-        print('[$type] ${entry.toString()}');
-      }
+      // Usa print standard di Dart (funziona sia in Flutter che in Dart puro)
+      print('[$type] ${entry.toString()}');
     }
   }
 }
@@ -306,16 +304,19 @@ class TkmApiLoggerInterceptor extends Interceptor {
 /// Helper per creare un client Dio con logging configurato
 class TkmApiLogger {
   /// Crea un client Dio con l'interceptor di logging
+  /// 
+  /// Se [config] non è fornita, usa una configurazione di default che logga
+  /// solo gli errori (produzione). Per abilitare logging completo, passa
+  /// esplicitamente [TkmApiLoggerConfig.development()].
   static Dio createDioClient({
     TkmApiLoggerConfig? config,
     String? apiType,
     BaseOptions? baseOptions,
   }) {
     final dio = Dio(baseOptions);
-    final loggerConfig = config ??
-        (kDebugMode
-            ? TkmApiLoggerConfig.development()
-            : TkmApiLoggerConfig.production());
+    // Configurazione di default: solo errori (produzione)
+    // L'applicazione che usa il pacchetto può passare una config esplicita
+    final loggerConfig = config ?? TkmApiLoggerConfig.production();
     
     dio.interceptors.add(
       TkmApiLoggerInterceptor(
