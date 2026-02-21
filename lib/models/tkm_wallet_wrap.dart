@@ -104,22 +104,47 @@ class TkmWalletWrap {
     return walletWrap;
   }
 
+  /// Valid mnemonic word counts (BIP39-style).
+  static const List<int> _validMnemonicLengths = [12, 15, 18, 21, 24];
+
   static Future<TkmWalletWrap> restoreWalletFromFile(
       {required File walletFile,
       required String walletName,
       required String password}) async {
-    String encriptedWallet = await FileSystemUtils.readFile(walletFile.path);
-    String decriptedString =
-        CryptoMisc.descryptWallet(encriptedWallet, password);
+    final String rawContent =
+        await FileSystemUtils.readFile(walletFile.path);
+    final String trimmed = rawContent.trim();
 
-    dynamic a = jsonDecode(decriptedString);
-    KeyBean kb = KeyBean.fromJson(a);
+    final List<String> wordList;
+    if (trimmed.startsWith('{')) {
+      // Encrypted wallet file (EncKeyBean JSON)
+      final String decriptedString =
+          CryptoMisc.descryptWallet(rawContent, password);
+      final dynamic a = jsonDecode(decriptedString);
+      final KeyBean kb = KeyBean.fromJson(a);
+      wordList = kb.words.split(" ");
+    } else {
+      // Plain mnemonic file (e.g. words_walet_*.txt: comma or space separated)
+      final List<String> parsedWords = trimmed
+          .split(RegExp(r'[\s,]+'))
+          .map((s) => s.trim())
+          .where((s) => s.isNotEmpty)
+          .toList();
+      if (parsedWords.isEmpty ||
+          !_validMnemonicLengths.contains(parsedWords.length)) {
+        throw FormatException(
+          'Formato file non riconosciuto: usa un file .wallet o un file con '
+          'le parole di recupero (12, 15, 18, 21 o 24 parole).',
+        );
+      }
+      wordList = parsedWords;
+    }
 
-    var walletWrap = TkmWalletWrap.restoreFromKeyWords(
-        walletName: walletName,
-        password: password,
-        wordList: kb.words.split(" "));
-    return walletWrap;
+    return TkmWalletWrap.restoreFromKeyWords(
+      walletName: walletName,
+      password: password,
+      wordList: wordList,
+    );
   }
 
   // Method to initialize the wallet
