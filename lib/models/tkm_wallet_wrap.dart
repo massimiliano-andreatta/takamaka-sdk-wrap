@@ -104,8 +104,8 @@ class TkmWalletWrap {
     return walletWrap;
   }
 
-  /// Valid mnemonic word counts (BIP39-style).
-  static const List<int> _validMnemonicLengths = [12, 15, 18, 21, 24];
+  /// Valid mnemonic word count (Takamaka uses 25 words).
+  static const List<int> _validMnemonicLengths = [25];
 
   static Future<TkmWalletWrap> restoreWalletFromFile(
       {required File walletFile,
@@ -134,7 +134,7 @@ class TkmWalletWrap {
           !_validMnemonicLengths.contains(parsedWords.length)) {
         throw FormatException(
           'Formato file non riconosciuto: usa un file .wallet o un file con '
-          'le parole di recupero (12, 15, 18, 21 o 24 parole).',
+          'le 25 parole di recupero.',
         );
       }
       wordList = parsedWords;
