@@ -391,12 +391,19 @@ class TkmApiLogger {
   /// Se [config] non è fornita, usa una configurazione di default che logga
   /// solo gli errori (produzione). Per abilitare logging completo, passa
   /// esplicitamente [TkmApiLoggerConfig.development()].
+  /// Default HTTP timeouts for Takamaka API clients (large multipart uploads).
+  static BaseOptions defaultBaseOptions() => BaseOptions(
+        connectTimeout: const Duration(minutes: 3),
+        sendTimeout: const Duration(minutes: 15),
+        receiveTimeout: const Duration(minutes: 5),
+      );
+
   static Dio createDioClient({
     TkmApiLoggerConfig? config,
     String? apiType,
     BaseOptions? baseOptions,
   }) {
-    final dio = Dio(baseOptions);
+    final dio = Dio(baseOptions ?? defaultBaseOptions());
     // Configurazione di default: solo errori (produzione)
     // L'applicazione che usa il pacchetto può passare una config esplicita
     final loggerConfig = config ?? TkmApiLoggerConfig.production();

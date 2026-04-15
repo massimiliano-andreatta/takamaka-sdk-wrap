@@ -11,6 +11,11 @@ dependencies:
   flutter:
     sdk: flutter
 
+  # Direct deps for blob metadata collection (mime sniffing); same family as io_takamaka_core_wallet.
+  exif: ^3.1.4
+  metadata_god: ^0.5.2+1
+  mime: ^1.0.4
+
   io_takamaka_core_wallet: ^2.0.8
   cryptography: ^2.7.0
   shared_preferences: ^2.3.2

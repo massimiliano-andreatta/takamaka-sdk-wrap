@@ -8,6 +8,7 @@ import 'dart:ui';
 import 'package:cryptography/cryptography.dart';
 import 'package:pointycastle/digests/sha3.dart';
 import 'package:io_takamaka_core_wallet/io_takamaka_core_wallet.dart';
+import 'package:takamaka_sdk_wrap/utils/tkm_blob_metadata_collect.dart';
 
 class TkmWalletAddress {
   /// Private variable containing the wallet's seed

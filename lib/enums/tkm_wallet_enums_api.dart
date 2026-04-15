@@ -49,34 +49,43 @@ extension TkmWalletEnumApiEndpointsExtension on TkmWalletEnumApiEndpoints {
       case TkmWalletEnumApiEndpoints.authLogin:
         return const TkmWalletApiEndpoint('/api/a4l/login', HttpMethods.POST);
       case TkmWalletEnumApiEndpoints.authGetInfoUser:
-        return const TkmWalletApiEndpoint('/api/a4l/get-basic-user-info', HttpMethods.POST);
+        return const TkmWalletApiEndpoint(
+            '/api/a4l/get-basic-user-info', HttpMethods.POST);
       case TkmWalletEnumApiEndpoints.authGetListAddressRegisterForUser:
-        return const TkmWalletApiEndpoint('/api/a4l/get-user-addresses', HttpMethods.POST);
+        return const TkmWalletApiEndpoint(
+            '/api/a4l/get-user-addresses', HttpMethods.POST);
       case TkmWalletEnumApiEndpoints.authRefreshToken:
         return const TkmWalletApiEndpoint('/api/a4l/login', HttpMethods.POST);
       case TkmWalletEnumApiEndpoints.authSyncAddress:
-        return const TkmWalletApiEndpoint('/api/a4l/add-user-address', HttpMethods.POST);
+        return const TkmWalletApiEndpoint(
+            '/api/a4l/add-user-address', HttpMethods.POST);
 
       case TkmWalletEnumApiEndpoints.sendTransaction:
-        return const TkmWalletApiEndpoint('/api/v1/transaction', HttpMethods.POST);
+        return const TkmWalletApiEndpoint(
+            '/api/v1/transaction', HttpMethods.POST);
       case TkmWalletEnumApiEndpoints.retiveQtelsaAddress:
-        return const TkmWalletApiEndpoint('/api/v1/bookmark/retrieve', HttpMethods.GET);
+        return const TkmWalletApiEndpoint(
+            '/api/v1/bookmark/retrieve', HttpMethods.GET);
       case TkmWalletEnumApiEndpoints.getStakingNodeList:
         return const TkmWalletApiEndpoint('/api/v2/node/list', HttpMethods.GET);
       case TkmWalletEnumApiEndpoints.getAcceptedBets:
         return const TkmWalletApiEndpoint('/api/acceptedbets', HttpMethods.GET);
       case TkmWalletEnumApiEndpoints.getTransactionList:
-        return const TkmWalletApiEndpoint('/api/search/fromto', HttpMethods.GET);
+        return const TkmWalletApiEndpoint(
+            '/api/search/fromto', HttpMethods.GET);
       case TkmWalletEnumApiEndpoints.getBalance:
         return const TkmWalletApiEndpoint('/api/v1/balance', HttpMethods.GET);
       case TkmWalletEnumApiEndpoints.getCurrencyList:
-        return const TkmWalletApiEndpoint('/api/v1/currencies/list', HttpMethods.GET);
+        return const TkmWalletApiEndpoint(
+            '/api/v1/currencies/list', HttpMethods.GET);
       case TkmWalletEnumApiEndpoints.getBlockchainSettings:
         return const TkmWalletApiEndpoint('/api/tkmsettings', HttpMethods.GET);
       case TkmWalletEnumApiEndpoints.getCurrenciesExchangeRate:
-        return const TkmWalletApiEndpoint('/api/v1/currencies/change', HttpMethods.GET);
+        return const TkmWalletApiEndpoint(
+            '/api/v1/currencies/change', HttpMethods.GET);
       case TkmWalletEnumApiEndpoints.searchTransactions:
-        return const TkmWalletApiEndpoint('/api/v1/transactions/search', HttpMethods.POST);
+        return const TkmWalletApiEndpoint(
+            '/api/v1/transactions/search', HttpMethods.POST);
     }
   }
 }
