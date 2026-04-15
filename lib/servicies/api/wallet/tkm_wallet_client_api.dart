@@ -16,6 +16,7 @@ import 'package:takamaka_sdk_wrap/models/api/wallet/tkm_wallet_list_node_respons
 import 'package:takamaka_sdk_wrap/models/api/wallet/tkm_wallet_staking_node.dart';
 import 'package:takamaka_sdk_wrap/models/api/wallet/tkm_wallet_transaction_response.dart';
 import 'package:takamaka_sdk_wrap/models/api/wallet/tkm_wallet_transaction_result.dart';
+import 'package:takamaka_sdk_wrap/shared/tkm_api_transaction_limits.dart';
 
 
 /// This class represents the result of a transaction, containing a success flag and a message.
@@ -47,6 +48,15 @@ class TkmWalletClientApi {
   /// - A [TkmTransactionTransactionResult] containing the success status and a message.
   Future<TkmTransactionTransactionResult> sendingTransaction({required TransactionInput transactionSend}) async {
     try {
+      final txUtf8Length = utf8.encode(transactionSend.tx).length;
+      if (txUtf8Length > kTkmMaxTransactionTxUtf8Bytes) {
+        return TkmTransactionTransactionResult(
+          success: false,
+          message:
+              'Transaction payload exceeds the API limit (${kTkmMaxTransactionApiBodyBytes ~/ (1024 * 1024)} MB body). Use a smaller file or send a hash-only blob.',
+        );
+      }
+
       var tx = transactionSend.toJson();
 
       /// Convert the transaction input to JSON format.
@@ -94,8 +104,31 @@ class TkmWalletClientApi {
         return TkmTransactionTransactionResult(success: false, message: "Error: ${response.statusCode} - ${response.statusMessage}");
       }
     } catch (e) {
-      /// Catch any unexpected errors and return a failure message.
-      return TkmTransactionTransactionResult(success: false, message: "An unexpected error occurred: ${e.toString()}");
+      if (e is DioException) {
+        final code = e.response?.statusCode;
+        if (code == 502 || code == 503 || code == 504) {
+          return TkmTransactionTransactionResult(
+            success: false,
+            message:
+                'Server error ($code). The request may be too large or the service is temporarily unavailable. Try a smaller file or retry later.',
+          );
+        }
+        if (code != null) {
+          return TkmTransactionTransactionResult(
+            success: false,
+            message:
+                'Request failed ($code): ${e.response?.statusMessage ?? e.message ?? e.toString()}',
+          );
+        }
+        return TkmTransactionTransactionResult(
+          success: false,
+          message: 'Network error: ${e.message ?? e.toString()}',
+        );
+      }
+      return TkmTransactionTransactionResult(
+        success: false,
+        message: 'An unexpected error occurred: ${e.toString()}',
+      );
     }
   }
 
