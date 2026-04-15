@@ -212,16 +212,14 @@ class TkmWalletAddress {
 
       return await _createGenericTransaction(itb);
     } catch (e) {
-      /// Handling errors during file reading or hashing
-      print("Error creating transaction with file hash: $e");
+      print("Error creating BLOB hash transaction: $e");
       rethrow;
     }
   }
 
   Future<TransactionBean> createTransactionBlobFile({required File file, required List<String> tags}) async {
     try {
-      var tkmMetaData = await MetadataUtils.collectMetadata(file, tags);
-      String message = jsonEncode(tkmMetaData.toJson());
+      var tkmMetaData = await TkmBlobMetadataCollect.collect(file, tags);
 
       final transactionTime = TKmTK.getTransactionTime();
 
@@ -231,8 +229,7 @@ class TkmWalletAddress {
 
       return await _createGenericTransaction(itb);
     } catch (e) {
-      /// Handling errors during file reading or hashing
-      print("Error creating transaction with file hash: $e");
+      print("Error creating BLOB file transaction: $e");
       rethrow;
     }
   }

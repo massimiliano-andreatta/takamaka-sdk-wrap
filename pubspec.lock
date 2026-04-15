@@ -258,7 +258,7 @@ packages:
     source: hosted
     version: "2.0.7"
   exif:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: exif
       sha256: a7980fdb3b7ffcd0b035e5b8a5e1eef7cadfe90ea6a4e85ebb62f87b96c7a172
@@ -505,7 +505,7 @@ packages:
     source: hosted
     version: "1.16.0"
   metadata_god:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: metadata_god
       sha256: cf13931c39eba0b9443d16e8940afdabee125bf08945f18d4c0d02bcae2a3317
@@ -513,7 +513,7 @@ packages:
     source: hosted
     version: "0.5.2+1"
   mime:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: mime
       sha256: "801fd0b26f14a4a58ccb09d5892c3fbdeff209594300a542492cf13fba9d247a"
