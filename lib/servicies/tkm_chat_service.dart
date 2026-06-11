@@ -93,4 +93,16 @@ class TkmChatService {
     _keys = null;
     _registeredUser = null;
   }
+
+  /// Persists a wallet-derived RSA key that successfully decrypted an invite.
+  Future<void> promoteRsaKeyPair(TkmChatRsaKeyPair pair) async {
+    final keys = _keys;
+    if (keys == null || keys.rsaKeyPair.publicKeyUrl64 == pair.publicKeyUrl64) {
+      return;
+    }
+    _keys = keys.withPromotedRsaKey(pair);
+    if (rsaKeySaver != null) {
+      await rsaKeySaver!(pair);
+    }
+  }
 }

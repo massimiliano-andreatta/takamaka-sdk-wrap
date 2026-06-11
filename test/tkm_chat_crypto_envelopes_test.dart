@@ -454,6 +454,37 @@ void main() {
       expect(TkmChatRsaKeyPair.decodePublicKey(keys.rsaPublicKeyUrl64).modulus,
           isNotNull);
     });
+
+    test('symmetricKeyFromTopic tries wallet-derived RSA fallback', () async {
+      final memberRegister = await TkmChatCrypto.buildRegisterUserRequest(
+        keys: keys,
+        nonceResponse: ChatApiGuideFixtures.guideNonceResponse(),
+      );
+
+      final request = await TkmChatCrypto.buildCreateConversationRequest(
+        keys: keys,
+        title: 'Fallback RSA test',
+        memberRegisterBeans: [memberRegister],
+      );
+
+      final topic = request['topic'] as Map<String, dynamic>;
+      final wrongRsa = await TkmChatRsaKeyPair.generate();
+      final keysWithFallback = ChatKeyMaterial(
+        signKeyPair: keys.signKeyPair,
+        rsaKeyPair: wrongRsa,
+        rsaKeyFallbacks: [keys.rsaKeyPair],
+        signKeyIndex: keys.signKeyIndex,
+      );
+
+      final resolved = await TkmChatCrypto.symmetricKeyFromTopic(
+        keys: keysWithFallback,
+        topic: topic,
+      );
+
+      expect(resolved.error, isNull);
+      expect(resolved.symmetricKey, isNotEmpty);
+      expect(resolved.resolvedRsaKey, keys.rsaKeyPair);
+    });
   });
 
   group('stream event parsing helpers', () {
