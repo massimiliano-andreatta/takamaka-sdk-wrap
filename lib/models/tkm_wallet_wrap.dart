@@ -49,6 +49,9 @@ class TkmWalletWrap {
     return _walletName;
   }
 
+  /// Wallet seed (available after [initializeWallet]); used for chat key derivation.
+  String? get walletSeed => _seed;
+
   String get walletPath {
     return _walletDirectory;
   }
@@ -68,6 +71,14 @@ class TkmWalletWrap {
   // Getter for wallets that are visible
   List<TkmWalletAddress> get visibleAddresses {
     return _addresses.where((wallet) => wallet.visible).toList();
+  }
+
+  List<TkmWalletAddress> get chatEligibleAddresses {
+    return _addresses.where((a) => a.eligibleForChat).toList();
+  }
+
+  List<TkmWalletAddress> get blockchainEligibleAddresses {
+    return _addresses.where((a) => a.eligibleForBlockchain).toList();
   }
 
   // Getter for all wallets

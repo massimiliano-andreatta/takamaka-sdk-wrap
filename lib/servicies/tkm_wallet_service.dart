@@ -22,11 +22,15 @@ import 'package:takamaka_sdk_wrap/models/auth/tkm_login_request.dart';
 import 'package:takamaka_sdk_wrap/models/auth/tkm_login_response.dart';
 import 'package:takamaka_sdk_wrap/models/auth/tkm_notification_response.dart';
 import 'package:takamaka_sdk_wrap/models/auth/tkm_sync_address_response.dart';
+import 'package:takamaka_sdk_wrap/models/chat/chat_wallet_catalog.dart';
+import 'package:takamaka_sdk_wrap/models/tkm_wallet_legacy_parse.dart';
+import 'package:takamaka_sdk_wrap/models/tkm_wallet_persistence.dart';
 import 'package:takamaka_sdk_wrap/models/tkm_wallet_address.dart';
 import 'package:takamaka_sdk_wrap/models/tkm_wallet_exceptions.dart';
 import 'package:takamaka_sdk_wrap/models/tkm_wallet_wrap.dart';
 import 'package:takamaka_sdk_wrap/servicies/api/wallet/tkm_auth_client_api.dart';
 import 'package:takamaka_sdk_wrap/servicies/api/wallet/tkm_wallet_client_api.dart';
+import 'package:dio/dio.dart';
 import 'package:takamaka_sdk_wrap/shared/tkm_api_logger.dart';
 
 class TkmWalletService {
@@ -39,12 +43,14 @@ class TkmWalletService {
   TkmWalletService({
     required TkmWalletEnumEnvironments currentEnv,
     TkmApiLoggerConfig? loggerConfig,
+    BaseOptions? dioBaseOptions,
   }) {
     _clientApi = TkmWalletClientApi(
       currentEnv: currentEnv,
       dicClient: TkmApiLogger.createDioClient(
         config: loggerConfig,
         apiType: 'wallet',
+        baseOptions: dioBaseOptions,
       ),
     );
     _clientApiAuth = TkmWalletAuthClientApi(
@@ -52,6 +58,7 @@ class TkmWalletService {
       dicClient: TkmApiLogger.createDioClient(
         config: loggerConfig,
         apiType: 'auth',
+        baseOptions: dioBaseOptions,
       ),
     );
   }
@@ -195,6 +202,64 @@ class TkmWalletService {
     return wallets;
   }
 
+  /// Wallet metadata for chat identity picker (no Ed25519/RSA derivation per address).
+  static Future<List<ChatWalletCatalogEntry>> getWalletCatalog() async {
+    final prefs = await SharedPreferences.getInstance();
+    final walletJsonList = prefs.getStringList(_walletKey);
+    if (walletJsonList == null || walletJsonList.isEmpty) {
+      return [];
+    }
+
+    final catalog = <ChatWalletCatalogEntry>[];
+    for (final walletJson in walletJsonList) {
+      final map = jsonDecode(walletJson) as Map<String, dynamic>;
+      final rawAddresses = map['addresses'] as List<dynamic>? ?? [];
+      final addresses = rawAddresses.map((raw) {
+        final addressMap = raw as Map<String, dynamic>;
+        final index = (addressMap['index'] as num?)?.toInt() ?? 0;
+        return ChatAddressCatalogEntry(
+          index: index,
+          name: addressMap['name'] as String? ??
+              (index == 0 ? 'Address Main' : 'Address $index'),
+          visible: TkmWalletLegacyParse.parseVisible(
+            addressMap['visible'],
+            index: index,
+          ),
+          usage: TkmWalletLegacyParse.parseUsage(addressMap['usage']),
+        );
+      }).toList();
+      catalog.add(ChatWalletCatalogEntry(
+        walletName: map['walletName'] as String,
+        isDefault: map['isDefault'] as bool? ?? false,
+        addresses: addresses,
+      ));
+    }
+
+    if (catalog.isNotEmpty && !catalog.any((w) => w.isDefault)) {
+      final first = catalog.first;
+      catalog[0] = ChatWalletCatalogEntry(
+        walletName: first.walletName,
+        isDefault: true,
+        addresses: first.addresses,
+      );
+    }
+    return catalog;
+  }
+
+  /// Reads a wallet seed from storage without loading address key pairs.
+  static Future<String?> readWalletSeed({required String walletName}) async {
+    final prefs = await SharedPreferences.getInstance();
+    final walletJsonList = prefs.getStringList(_walletKey);
+    if (walletJsonList == null) return null;
+    for (final walletJson in walletJsonList) {
+      final map = jsonDecode(walletJson) as Map<String, dynamic>;
+      if (map['walletName'] == walletName) {
+        return map['seed'] as String?;
+      }
+    }
+    return null;
+  }
+
   /// Saves or updates a wallet in SharedPreferences.
   ///
   /// This method retrieves the current list of wallets, checks if the wallet
@@ -206,36 +271,33 @@ class TkmWalletService {
   static Future<void> saveWallet({required TkmWalletWrap wallet}) async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
 
-    // Retrieve the current list of wallets from storage
-    List<String>? walletJsonList = prefs.getStringList(_walletKey);
-    walletJsonList ??= [];
+    final walletJsonList =
+        List<String>.from(prefs.getStringList(_walletKey) ?? []);
 
     if (walletJsonList.isEmpty) {
       wallet.isDefault = true;
     }
 
-    // Convert JSON strings into wallet objects asynchronously
-    List<TkmWalletWrap> wallets = await Future.wait(walletJsonList.map(
-      (walletJson) async => TkmWalletWrap.fromJson(jsonDecode(walletJson)),
-    ));
+    final candidateMap = wallet.toJson();
+    final candidateEncoded = jsonEncode(candidateMap);
 
-    // Find if a wallet with the same name already exists
-    int existingWalletIndex =
-        wallets.indexWhere((w) => w.walletName == wallet.walletName);
+    final existingIndex = walletJsonList.indexWhere((raw) {
+      final map = jsonDecode(raw) as Map<String, dynamic>;
+      return map['walletName'] == wallet.walletName;
+    });
 
-    if (existingWalletIndex != -1) {
-      // If it exists, update the existing wallet
-      wallets[existingWalletIndex] = wallet;
+    if (existingIndex != -1) {
+      final storedMap =
+          jsonDecode(walletJsonList[existingIndex]) as Map<String, dynamic>;
+      if (TkmWalletPersistence.mapsEqualForStorage(storedMap, candidateMap)) {
+        return;
+      }
+      walletJsonList[existingIndex] = candidateEncoded;
     } else {
-      // If not, add the new wallet to the list
-      wallets.add(wallet);
+      walletJsonList.add(candidateEncoded);
     }
 
-    // Convert the updated wallet list back to JSON and save it
-    List<String> updatedWalletJsonList =
-        wallets.map((w) => jsonEncode(w.toJson())).toList();
-
-    await prefs.setStringList(_walletKey, updatedWalletJsonList);
+    await prefs.setStringList(_walletKey, walletJsonList);
   }
 
   /// Deletes a wallet by its name from SharedPreferences.
@@ -509,7 +571,7 @@ class TkmWalletService {
 
     addresses = wallets
         .expand((wallet) =>
-            wallet.addresses.where((address) => address.visible == true))
+            wallet.addresses.where((address) => address.eligibleForBlockchain))
         .toList();
 
     return addresses;
@@ -525,7 +587,7 @@ class TkmWalletService {
         ? wallets
             .firstWhere((wallet) => wallet.isDefault == true)
             .addresses
-            .where((address) => address.visible == true)
+            .where((address) => address.eligibleForBlockchain)
             .toList()
         : [];
 

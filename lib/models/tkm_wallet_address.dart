@@ -8,6 +8,8 @@ import 'dart:ui';
 import 'package:cryptography/cryptography.dart';
 import 'package:pointycastle/digests/sha3.dart';
 import 'package:io_takamaka_core_wallet/io_takamaka_core_wallet.dart';
+import 'package:takamaka_sdk_wrap/models/tkm_address_usage.dart';
+import 'package:takamaka_sdk_wrap/models/tkm_wallet_legacy_parse.dart';
 import 'package:takamaka_sdk_wrap/utils/tkm_blob_metadata_collect.dart';
 
 class TkmWalletAddress {
@@ -40,6 +42,9 @@ class TkmWalletAddress {
 
   /// Indicates if the wallet is visible in the list
   bool _visible = true;
+
+  /// Chat vs blockchain scope for this address index.
+  TkmAddressUsage _usage = TkmAddressUsage.both;
 
   /// Wallet key pair (public and private)
   late final SimpleKeyPair _keypair;
@@ -98,6 +103,16 @@ class TkmWalletAddress {
   /// Sets the wallet's visibility
   void setVisible(bool visible) => _visible = visible;
 
+  TkmAddressUsage get usage => _usage;
+
+  set usage(TkmAddressUsage value) => _usage = value;
+
+  /// Visible in UI lists and eligible for encrypted chat.
+  bool get eligibleForChat => visible && _usage.enabledForChat;
+
+  /// Visible in UI lists and eligible for on-chain / wallet operations.
+  bool get eligibleForBlockchain => visible && _usage.enabledForBlockchain;
+
   /// Initializes the wallet: generates key and address
   Future<void> initialize() async {
     try {
@@ -122,8 +137,9 @@ class TkmWalletAddress {
       'index': _index,
       'name': _name,
       'walletName': _walletName,
-      'favorite': _favorite, // Include the favorite flag in JSON
-      'visible': _visible, // Include the visibility flag in JSON
+      'favorite': _favorite,
+      'visible': _visible,
+      if (_usage != TkmAddressUsage.both) 'usage': _usage.toJson(),
     };
   }
 
@@ -137,7 +153,11 @@ class TkmWalletAddress {
 
     // Restore the "favorite" and "visible" flags from the JSON
     walletObj._favorite = json['favorite'] ?? false; // Set the "favorite" status from JSON
-    walletObj._visible = json['visible'] ?? true; // Set the visibility from JSON
+    walletObj._visible = TkmWalletLegacyParse.parseVisible(
+      json['visible'],
+      index: walletObj.index,
+    );
+    walletObj._usage = TkmWalletLegacyParse.parseUsage(json['usage']);
     walletObj._name = json['name'] ?? "Address ${json['index']}";
 
     // Asynchronously initialize the wallet
