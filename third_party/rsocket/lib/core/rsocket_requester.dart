@@ -1,0 +1,441 @@
+import 'dart:async';
+import 'dart:collection';
+import 'dart:typed_data';
+
+import '../core/rsocket_error.dart';
+import '../frame/frame_types.dart' as frame_types;
+import '../duplex_connection.dart';
+import '../payload.dart';
+import '../rsocket.dart';
+import '../frame/frame.dart';
+import '../io/bytes.dart';
+import 'stream_id_supplier.dart';
+
+Future<void> voidFuture() async {}
+
+const MAX_REQUEST_N_SIZE = 0x7FFFFFFF;
+
+abstract class Subscriber {
+  void onNext(Payload? value);
+
+  void onError(dynamic error);
+
+  void onComplete();
+}
+
+class CompleterSubscriber implements Subscriber {
+  Completer completer;
+  Payload? payload;
+
+  CompleterSubscriber(this.completer);
+
+  @override
+  void onNext(Payload? payload) {
+    this.payload = payload;
+  }
+
+  @override
+  void onError(dynamic error) {
+    completer.completeError(error);
+  }
+
+  @override
+  void onComplete() {
+    completer.complete(payload);
+  }
+}
+
+class StreamSubscriber implements Subscriber {
+  final StreamController controller;
+
+  StreamSubscriber({FutureOr<void> onCancel()? = null})
+      : controller = StreamController(onCancel: onCancel);
+
+  @override
+  void onNext(Payload? value) {
+    controller.add(value);
+  }
+
+  @override
+  void onError(dynamic error) {
+    controller.addError(error);
+  }
+
+  @override
+  void onComplete() {
+    controller.close().then((value) => {});
+  }
+
+  Stream<Payload?> payloadStream() {
+    return controller.stream.map((item) => item as Payload?);
+  }
+}
+
+/// Bidirectional channel: receives server payloads and sends client payloads
+/// respecting REQUEST_N credits from the responder (Spring rschat upload).
+class ChannelStreamSubscriber implements Subscriber {
+  ChannelStreamSubscriber({
+    required this.connection,
+    required this.streamId,
+    FutureOr<void> Function()? onCancel,
+  }) : _receiver = StreamSubscriber(onCancel: onCancel);
+
+  final DuplexConnection connection;
+  final int streamId;
+  final StreamSubscriber _receiver;
+  final Queue<Payload> _pendingOutbound = Queue<Payload>();
+  int _sendCredits = 0;
+  bool _inputClosed = false;
+  bool _outputCompleted = false;
+
+  Stream<Payload?> payloadStream() => _receiver.payloadStream();
+
+  void grantSendCredits(int count) {
+    if (count <= 0 || _outputCompleted) return;
+    _sendCredits += count;
+    _flushOutbound();
+  }
+
+  void enqueueOutbound(Payload payload) {
+    if (_outputCompleted) return;
+    _pendingOutbound.add(payload);
+    _flushOutbound();
+  }
+
+  void markInputClosed() {
+    _inputClosed = true;
+    _tryCompleteOutbound();
+  }
+
+  void _flushOutbound() {
+    while (_sendCredits > 0 && _pendingOutbound.isNotEmpty) {
+      _sendCredits--;
+      final payload = _pendingOutbound.removeFirst();
+      connection.write(
+        FrameCodec.encodePayloadFrame(streamId, false, payload),
+      );
+    }
+    _tryCompleteOutbound();
+  }
+
+  void _tryCompleteOutbound() {
+    if (_outputCompleted) return;
+    if (_inputClosed && _pendingOutbound.isEmpty) {
+      _outputCompleted = true;
+      connection.write(FrameCodec.encodePayloadFrame(streamId, true, null));
+    }
+  }
+
+  @override
+  void onNext(Payload? value) => _receiver.onNext(value);
+
+  @override
+  void onError(dynamic error) => _receiver.onError(error);
+
+  @override
+  void onComplete() => _receiver.onComplete();
+}
+
+class RSocketRequester extends RSocket {
+  bool closed = false;
+  double _availability = 1.0;
+  Timer? keepAliveTimer;
+  late StreamIdSupplier streamIdSupplier;
+  ConnectionSetupPayload? connectionSetupPayload;
+  late DuplexConnection connection;
+
+  //buffer for data chunk
+  List<int>? chunkBuffer;
+
+  Map<int, Subscriber> senders = {};
+  RSocket? responder;
+  String mode = 'requester';
+  ErrorConsumer? errorConsumer;
+
+  RSocketRequester(String mode, ConnectionSetupPayload connectionSetupPayload,
+      DuplexConnection connection) {
+    this.mode = mode;
+    if (mode == 'requester') {
+      streamIdSupplier = StreamIdSupplier.clientSupplier();
+    } else {
+      streamIdSupplier = StreamIdSupplier.serverSupplier();
+    }
+    this.connectionSetupPayload = connectionSetupPayload;
+    this.connection = connection;
+    if (this.connection.receiveHandler == null) {
+      this.connection.receiveHandler = (chunk) => receiveChunk(chunk);
+    }
+    this.connection.closeHandler = () {
+      close();
+    };
+    initRSocketCallStubs();
+  }
+
+  void initRSocketCallStubs() {
+    //RSocket requestResponse
+    requestResponse = (payload) {
+      var completer = Completer<Payload>();
+      var streamId = streamIdSupplier.nextStreamId(senders)!;
+      connection
+          .write(FrameCodec.encodeRequestResponseFrame(streamId, payload!));
+      senders[streamId] = CompleterSubscriber(completer);
+      return completer.future;
+    };
+    //RSocket fireAndForget
+    fireAndForget = (payload) {
+      var streamId = streamIdSupplier.nextStreamId(senders)!;
+      connection.write(FrameCodec.encodeFireAndForgetFrame(streamId, payload!));
+      return Future.value(() {});
+    };
+    //RSocket requestStream
+    requestStream = (payload) {
+      var streamId = streamIdSupplier.nextStreamId(senders)!;
+      connection.write(FrameCodec.encodeRequestStreamFrame(
+          streamId, MAX_REQUEST_N_SIZE, payload!));
+      var streamSubscriber = StreamSubscriber(onCancel: () {
+        connection.write(FrameCodec.encodeCancelFrame(streamId));
+        senders.remove(streamId);
+      });
+      senders[streamId] = streamSubscriber;
+      return streamSubscriber.payloadStream();
+    };
+    //RSocket metadataPush
+    metadataPush = (payload) {
+      connection.write(FrameCodec.encodeMetadataFrame(0, payload!));
+      return Future.value(() {});
+    };
+    // RSocket requestChannel (client → server bidirectional stream).
+    requestChannel = (payloads) {
+      final streamId = streamIdSupplier.nextStreamId(senders)!;
+      final channel = ChannelStreamSubscriber(
+        connection: connection,
+        streamId: streamId,
+        onCancel: () {
+          connection.write(FrameCodec.encodeCancelFrame(streamId));
+          senders.remove(streamId);
+        },
+      );
+      senders[streamId] = channel;
+
+      var isFirst = true;
+      payloads.listen(
+        (payload) {
+          if (isFirst) {
+            isFirst = false;
+            connection.write(FrameCodec.encodeChannelFrame(
+              streamId,
+              MAX_REQUEST_N_SIZE,
+              payload,
+            ));
+          } else {
+            channel.enqueueOutbound(payload);
+          }
+        },
+        onDone: () => channel.markInputClosed(),
+        onError: (Object error) {
+          if (senders.containsKey(streamId)) {
+            senders.remove(streamId);
+            channel.onError(error);
+          }
+        },
+        cancelOnError: true,
+      );
+
+      return channel
+          .payloadStream()
+          .where((payload) => payload != null)
+          .cast<Payload>();
+    };
+  }
+
+  void sendSetupPayload() {
+    connection.init();
+    connection.write(setupPayloadFrame());
+    if (mode == 'requester') {
+      keepAliveTimer = Timer.periodic(
+          Duration(seconds: connectionSetupPayload!.keepAliveInterval),
+          (Timer t) {
+        if (!closed) {
+          connection.write(FrameCodec.encodeKeepAlive(false, 0));
+        } else {
+          keepAliveTimer?.cancel();
+        }
+      });
+    }
+  }
+
+  @override
+  void close() {
+    if (!closed) {
+      closed = true;
+      _availability = 0.0;
+      keepAliveTimer?.cancel();
+      connection.close();
+    }
+  }
+
+  @override
+  double availability() {
+    return _availability;
+  }
+
+  void receiveChunk(Uint8List chunk) {
+    if (this.chunkBuffer != null) {
+      this.chunkBuffer = this.chunkBuffer! + chunk;
+      var chunkDataLength = this.chunkBuffer!.length - 3;
+      var bytes = this.chunkBuffer!.sublist(0, 3);
+      var rsocketFrameLength = bytesToNumber(bytes)!;
+      if (rsocketFrameLength <= chunkDataLength) {
+        for (var frame in parseFrames(this.chunkBuffer!)) {
+          receiveFrame(frame);
+        }
+        this.chunkBuffer = null;
+      }
+      return;
+    }
+    if (chunk.length > 3) {
+      var chunkDataLength = chunk.length - 3;
+      var bytes = chunk.sublist(0, 3);
+      var rsocketFrameLength = bytesToNumber(bytes)!;
+      if (rsocketFrameLength > chunkDataLength) {
+        this.chunkBuffer = chunk;
+        return;
+      }
+      for (var frame in parseFrames(chunk)) {
+        receiveFrame(frame);
+      }
+    }
+  }
+
+  void receiveFrame(RSocketFrame frame) {
+    var header = frame.header;
+    var streamId = header.streamId;
+    switch (header.type) {
+      case frame_types.PAYLOAD:
+        var payloadFrame = frame as PayloadFrame;
+        if (senders.containsKey(streamId)) {
+          var subscriber = senders[streamId];
+          var payload = payloadFrame.payload;
+          if (payloadFrame.completed) {
+            senders.remove(streamId);
+            if (payload?.data != null) {
+              subscriber!.onNext(payload);
+            }
+            subscriber!.onComplete();
+          } else {
+            if (payload?.data != null) {
+              subscriber!.onNext(payload);
+            }
+          }
+        }
+        break;
+      case frame_types.KEEPALIVE:
+        var keepAliveFrame = frame as KeepAliveFrame;
+        if (keepAliveFrame.respond) {
+          connection.write(FrameCodec.encodeKeepAlive(
+              false, keepAliveFrame.lastReceivedPosition));
+        }
+        break;
+      case frame_types.ERROR:
+        var errorFrame = frame as ErrorFrame;
+        var streamId = header.streamId;
+        var error = RSocketException(errorFrame.code, errorFrame.message);
+        if (streamId == 0 && errorConsumer != null) {
+          errorConsumer!(error);
+        } else {
+          if (senders.containsKey(streamId)) {
+            var subscriber = senders[streamId]!;
+            senders.remove(streamId);
+            subscriber.onError(error);
+          }
+        }
+        break;
+      case frame_types.REQUEST_N:
+        final requestNFrame = frame as RequestNFrame;
+        final subscriber = senders[streamId];
+        if (subscriber is ChannelStreamSubscriber) {
+          subscriber.grantSendCredits(requestNFrame.initialRequestN ?? 0);
+        }
+        break;
+      case frame_types.CANCEL:
+        var streamId = header.streamId;
+        if (senders.containsKey(streamId)) {
+          //implement cancel
+          //var subscriber = senders[streamId];
+          //senders.remove(streamId);
+        }
+        break;
+      case frame_types.REQUEST_RESPONSE:
+        var requestResponseFrame = frame as RequestResponseFrame;
+        if (responder != null && requestResponseFrame.payload != null) {
+          responder!.requestResponse!(requestResponseFrame.payload)
+              .then((payload) {
+            connection.write(
+                FrameCodec.encodePayloadFrame(header.streamId, true, payload));
+          }).catchError((error) {
+            var rsocketError = convertToRSocketException(error);
+            connection.write(FrameCodec.encodeErrorFrame(
+                header.streamId, rsocketError.code!, rsocketError.message));
+          });
+        }
+        break;
+      case frame_types.REQUEST_FNF:
+        var fireAndForgetFrame = frame as RequestFNFFrame;
+        if (responder != null && fireAndForgetFrame.payload != null) {
+          responder!.fireAndForget!(fireAndForgetFrame.payload)
+              .then((value) => {});
+        }
+        break;
+      case frame_types.METADATA_PUSH:
+        var metadataPushFrame = frame as MetadataPushFrame;
+        if (responder != null && metadataPushFrame.payload != null) {
+          responder!.metadataPush!(metadataPushFrame.payload)
+              .then((value) => {});
+        }
+        break;
+      case frame_types.REQUEST_STREAM:
+        var requestStreamFrame = frame as RequestStreamFrame;
+        var requesterStreamId = header.streamId;
+        if (responder != null && requestStreamFrame.payload != null) {
+          responder!.requestStream!(requestStreamFrame.payload).listen(
+              (payload) {
+            connection.write(FrameCodec.encodePayloadFrame(
+                requesterStreamId, false, payload));
+          }, onDone: () {
+            connection.write(
+                FrameCodec.encodePayloadFrame(requesterStreamId, true, null));
+          }, onError: (Object error) {
+            if (error is RSocketException) {
+              var e = error;
+              connection.write(FrameCodec.encodeErrorFrame(
+                  requesterStreamId, e.code!, e.message));
+            } else {
+              connection.write(FrameCodec.encodeErrorFrame(requesterStreamId,
+                  RSocketErrorCode.APPLICATION_ERROR, error.toString()));
+            }
+          });
+        }
+        break;
+      default:
+    }
+  }
+
+  Uint8List setupPayloadFrame() {
+    return FrameCodec.encodeSetupFrame(
+        connectionSetupPayload!.keepAliveInterval,
+        connectionSetupPayload!.keepAliveMaxLifetime,
+        connectionSetupPayload!.metadataMimeType,
+        connectionSetupPayload!.dataMimeType,
+        connectionSetupPayload);
+  }
+}
+
+RSocketException convertToRSocketException(dynamic e) {
+  if (e == null) {
+    return RSocketException(RSocketErrorCode.APPLICATION_ERROR, 'Error');
+  } else if (e is RSocketException) {
+    return e;
+  } else {
+    return RSocketException(RSocketErrorCode.APPLICATION_ERROR, e.toString());
+  }
+}
