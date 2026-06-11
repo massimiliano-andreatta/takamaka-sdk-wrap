@@ -144,7 +144,11 @@ class TkmChatRsaKeyPair {
 
   String _decryptOaep(Uint8List input, OAEPEncoding engine) {
     engine.init(false, PrivateKeyParameter<RSAPrivateKey>(privateKey));
-    return utf8.decode(engine.process(input));
+    try {
+      return utf8.decode(engine.process(input));
+    } on FormatException {
+      throw StateError('RSA OAEP decrypt produced invalid UTF-8 (wrong key?)');
+    }
   }
 
   static RSAPublicKey decodePublicKey(String publicKeyUrl64) {
@@ -217,7 +221,11 @@ String _rsaDecryptBlocking(_RsaDecryptParams params) {
 
   String decryptWith(OAEPEncoding engine) {
     engine.init(false, PrivateKeyParameter<RSAPrivateKey>(privateKey));
-    return utf8.decode(engine.process(input));
+    try {
+      return utf8.decode(engine.process(input));
+    } on FormatException {
+      throw StateError('RSA OAEP decrypt produced invalid UTF-8 (wrong key?)');
+    }
   }
 
   try {

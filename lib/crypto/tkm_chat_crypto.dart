@@ -908,6 +908,7 @@ abstract final class TkmChatCrypto {
       return (
         symmetricKey: null,
         error: 'topic_invitation_list missing or empty',
+        resolvedRsaKey: null,
       );
     }
 
@@ -927,9 +928,11 @@ abstract final class TkmChatCrypto {
     }
 
     addCandidate(_inviteMap(invitations[mySignPk]));
-    addCandidate(
-      _inviteByEncKeyHashFallback(invitations, keys.rsaPublicKeyUrl64),
-    );
+    for (final rsa in keys.rsaKeyCandidates) {
+      addCandidate(
+        _inviteByEncKeyHashFallback(invitations, rsa.publicKeyUrl64),
+      );
+    }
     addCandidate(_singleInviteFallback(invitations));
     for (final invite in invitations.values) {
       addCandidate(_inviteMap(invite));
@@ -939,26 +942,81 @@ abstract final class TkmChatCrypto {
       return (
         symmetricKey: null,
         error: 'no invite for $mySignPk among ${invitations.length} member(s)',
+        resolvedRsaKey: null,
       );
     }
 
+    final rsaCandidates = _orderedRsaCandidatesForInvites(
+      keys: keys,
+      invites: candidates,
+    );
+
     String? lastError;
     for (final invite in candidates) {
-      try {
-        final symKey =
-            await decryptSymmetricInviteAsync(keys: keys, invite: invite);
-        if (symKey.isNotEmpty) {
-          return (symmetricKey: symKey, error: null);
+      final encKeyHash = invite['enc_key_hash'] as String?;
+      final matchingRsa = encKeyHash == null
+          ? rsaCandidates
+          : rsaCandidates
+              .where(
+                (rsa) =>
+                    TkmChatEncryption.hashSha3_256B64Url(rsa.publicKeyUrl64) ==
+                    encKeyHash,
+              )
+              .toList();
+      final rsaOrder =
+          matchingRsa.isNotEmpty ? matchingRsa : rsaCandidates;
+
+      for (final rsa in rsaOrder) {
+        try {
+          final symKey = await decryptSymmetricInviteAsync(
+            keys: keys,
+            invite: invite,
+            rsaKeyPair: rsa,
+          );
+          if (symKey.isNotEmpty) {
+            return (
+              symmetricKey: symKey,
+              error: null,
+              resolvedRsaKey:
+                  rsa.publicKeyUrl64 == keys.rsaPublicKeyUrl64 ? null : rsa,
+            );
+          }
+          lastError = 'decryptSymmetricInvite returned empty';
+        } catch (e) {
+          lastError = e.toString();
         }
-        lastError = 'decryptSymmetricInvite returned empty';
-      } catch (e) {
-        lastError = e.toString();
       }
     }
     return (
       symmetricKey: null,
-      error: 'RSA invite decrypt failed: $lastError',
+      error: 'RSA invite decrypt failed: $lastError '
+          '(tried ${rsaCandidates.length} RSA key(s), ${candidates.length} invite(s))',
+      resolvedRsaKey: null,
     );
+  }
+
+  static List<TkmChatRsaKeyPair> _orderedRsaCandidatesForInvites({
+    required ChatKeyMaterial keys,
+    required List<Map<String, dynamic>> invites,
+  }) {
+    final hashes = <String>{
+      for (final invite in invites)
+        if (invite['enc_key_hash'] is String) invite['enc_key_hash'] as String,
+    };
+    if (hashes.isEmpty) {
+      return keys.rsaKeyCandidates;
+    }
+    final matched = <TkmChatRsaKeyPair>[];
+    final rest = <TkmChatRsaKeyPair>[];
+    for (final rsa in keys.rsaKeyCandidates) {
+      final hash = TkmChatEncryption.hashSha3_256B64Url(rsa.publicKeyUrl64);
+      if (hashes.contains(hash)) {
+        matched.add(rsa);
+      } else {
+        rest.add(rsa);
+      }
+    }
+    return [...matched, ...rest];
   }
 
   /// Extracts `topic_invitation_list` from a topic map (tolerates wire variants).
@@ -997,7 +1055,7 @@ abstract final class TkmChatCrypto {
     Map<String, dynamic> invitations,
     String rsaPublicKeyUrl64,
   ) {
-    final myEncHash = TkmChatEncryption.hash256B64Url(rsaPublicKeyUrl64);
+    final myEncHash = TkmChatEncryption.hashSha3_256B64Url(rsaPublicKeyUrl64);
     for (final entry in invitations.entries) {
       final invite = _inviteMap(entry.value);
       if (invite == null) continue;

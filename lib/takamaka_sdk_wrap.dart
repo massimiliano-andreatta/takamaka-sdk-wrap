@@ -9,6 +9,7 @@ export 'models/chat/chat_key_material.dart';
 export 'models/chat/chat_wallet_catalog.dart';
 export 'models/tkm_address_usage.dart';
 export 'crypto/tkm_chat_crypto.dart';
+export 'crypto/tkm_chat_rsa.dart';
 export 'crypto/tkm_chat_encryption.dart';
 export 'crypto/tkm_chat_signing.dart';
 export 'crypto/tkm_chat_stream_encryption.dart';

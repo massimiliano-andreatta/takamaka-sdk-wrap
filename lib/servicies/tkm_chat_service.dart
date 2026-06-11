@@ -45,24 +45,36 @@ class TkmChatService {
     if (canRestore) {
       _keys = restoredKeyMaterial;
     } else {
-      TkmChatRsaKeyPair? rsaKeyPair;
+      final derivedRsa = await TkmChatRsaKeyPair.fromWalletSeed(
+        walletSeed,
+        signKeyIndex: signKeyIndex,
+      );
+      TkmChatRsaKeyPair? storedRsa;
       if (rsaKeyLoader != null) {
-        rsaKeyPair = await rsaKeyLoader!();
+        storedRsa = await rsaKeyLoader!();
       }
-      if (rsaKeyPair == null) {
-        rsaKeyPair = await TkmChatRsaKeyPair.fromWalletSeed(
-          walletSeed,
-          signKeyIndex: signKeyIndex,
-        );
+
+      TkmChatRsaKeyPair primaryRsa;
+      List<TkmChatRsaKeyPair> fallbacks = const [];
+      if (storedRsa == null) {
+        primaryRsa = derivedRsa;
         if (rsaKeySaver != null) {
-          await rsaKeySaver!(rsaKeyPair);
+          await rsaKeySaver!(derivedRsa);
         }
+      } else if (storedRsa.publicKeyUrl64 == derivedRsa.publicKeyUrl64) {
+        primaryRsa = storedRsa;
+      } else {
+        // Secure storage may hold a legacy ephemeral key while invites on the
+        // server were created with the wallet-derived RSA (or vice versa).
+        primaryRsa = storedRsa;
+        fallbacks = [derivedRsa];
       }
 
       _keys = await ChatKeyMaterial.fromWalletSeed(
         walletSeed,
         signKeyIndex: signKeyIndex,
-        rsaKeyPair: rsaKeyPair,
+        rsaKeyPair: primaryRsa,
+        rsaKeyFallbacks: fallbacks,
       );
     }
     final nonce = await _api.getNonce();
