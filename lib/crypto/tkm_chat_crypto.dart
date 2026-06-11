@@ -841,18 +841,20 @@ abstract final class TkmChatCrypto {
   static String decryptSymmetricInvite({
     required ChatKeyMaterial keys,
     required Map<String, dynamic> invite,
+    TkmChatRsaKeyPair? rsaKeyPair,
   }) {
     final encrypted = _encKeyFromInvite(invite);
-    return keys.rsaKeyPair.decrypt(encrypted);
+    return (rsaKeyPair ?? keys.rsaKeyPair).decrypt(encrypted);
   }
 
   /// Same as [decryptSymmetricInvite] but runs RSA off the UI isolate.
   static Future<String> decryptSymmetricInviteAsync({
     required ChatKeyMaterial keys,
     required Map<String, dynamic> invite,
+    TkmChatRsaKeyPair? rsaKeyPair,
   }) {
     final encrypted = _encKeyFromInvite(invite);
-    return keys.rsaKeyPair.decryptAsync(encrypted);
+    return (rsaKeyPair ?? keys.rsaKeyPair).decryptAsync(encrypted);
   }
 
   static String _encKeyFromInvite(Map<String, dynamic> invite) {
@@ -864,26 +866,40 @@ abstract final class TkmChatCrypto {
   }
 
   /// Result of resolving the AES conversation key from a retrieveconversation payload.
-  static Future<({String? symmetricKey, String? error})>
-      resolveSymmetricKeyFromDetail({
+  static Future<
+      ({
+        String? symmetricKey,
+        String? error,
+        TkmChatRsaKeyPair? resolvedRsaKey,
+      })> resolveSymmetricKeyFromDetail({
     required ChatKeyMaterial keys,
     required Map<String, dynamic> detail,
   }) async {
     if (detail.isEmpty) {
-      return (symmetricKey: null, error: 'empty retrieveConversation response');
+      return (
+        symmetricKey: null,
+        error: 'empty retrieveConversation response',
+        resolvedRsaKey: null,
+      );
     }
     final topic = topicFromRetrieveConversationResponse(detail);
     if (topic == null) {
       return (
         symmetricKey: null,
         error: 'topic missing in response keys=${detail.keys.toList()}',
+        resolvedRsaKey: null,
       );
     }
     return symmetricKeyFromTopic(keys: keys, topic: topic);
   }
 
   /// Decrypts the caller's invite from a [SignedContentTopicBean] map.
-  static Future<({String? symmetricKey, String? error})> symmetricKeyFromTopic({
+  static Future<
+      ({
+        String? symmetricKey,
+        String? error,
+        TkmChatRsaKeyPair? resolvedRsaKey,
+      })> symmetricKeyFromTopic({
     required ChatKeyMaterial keys,
     required Map<String, dynamic> topic,
   }) async {
