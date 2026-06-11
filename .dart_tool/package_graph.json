@@ -7,25 +7,39 @@
       "name": "takamaka_sdk_wrap",
       "version": "0.0.1",
       "dependencies": [
+        "asn1lib",
         "crypto",
         "cryptography",
         "dio",
         "either_dart",
+        "encrypt",
         "equatable",
         "exif",
         "flutter",
         "flutter_pretty_dio_logger",
         "io_takamaka_core_wallet",
+        "jcs_dart",
         "metadata_god",
         "mime",
         "path_provider",
         "pointycastle",
         "qr_flutter",
-        "shared_preferences"
+        "rsocket",
+        "sha3",
+        "shared_preferences",
+        "uuid"
       ],
       "devDependencies": [
         "flutter_lints",
         "flutter_test"
+      ]
+    },
+    {
+      "name": "rsocket",
+      "version": "1.0.0",
+      "dependencies": [
+        "collection",
+        "rxdart"
       ]
     },
     {
@@ -52,6 +66,11 @@
         "test_api",
         "vector_math"
       ]
+    },
+    {
+      "name": "jcs_dart",
+      "version": "0.0.0",
+      "dependencies": []
     },
     {
       "name": "qr_flutter",
@@ -91,6 +110,35 @@
         "path_provider_linux",
         "path_provider_platform_interface",
         "path_provider_windows"
+      ]
+    },
+    {
+      "name": "asn1lib",
+      "version": "1.6.5",
+      "dependencies": []
+    },
+    {
+      "name": "uuid",
+      "version": "3.0.7",
+      "dependencies": [
+        "crypto"
+      ]
+    },
+    {
+      "name": "sha3",
+      "version": "0.2.0",
+      "dependencies": []
+    },
+    {
+      "name": "encrypt",
+      "version": "5.0.3",
+      "dependencies": [
+        "args",
+        "asn1lib",
+        "clock",
+        "collection",
+        "crypto",
+        "pointycastle"
       ]
     },
     {
@@ -217,6 +265,16 @@
       ]
     },
     {
+      "name": "collection",
+      "version": "1.19.1",
+      "dependencies": []
+    },
+    {
+      "name": "rxdart",
+      "version": "0.27.7",
+      "dependencies": []
+    },
+    {
       "name": "lints",
       "version": "5.1.1",
       "dependencies": []
@@ -231,11 +289,6 @@
     {
       "name": "meta",
       "version": "1.16.0",
-      "dependencies": []
-    },
-    {
-      "name": "collection",
-      "version": "1.19.1",
       "dependencies": []
     },
     {
@@ -357,6 +410,11 @@
         "flutter",
         "path_provider_platform_interface"
       ]
+    },
+    {
+      "name": "args",
+      "version": "2.7.0",
+      "dependencies": []
     },
     {
       "name": "typed_data",
@@ -499,18 +557,6 @@
       ]
     },
     {
-      "name": "encrypt",
-      "version": "5.0.3",
-      "dependencies": [
-        "args",
-        "asn1lib",
-        "clock",
-        "collection",
-        "crypto",
-        "pointycastle"
-      ]
-    },
-    {
       "name": "json_serializable",
       "version": "6.11.1",
       "dependencies": [
@@ -582,11 +628,6 @@
       ]
     },
     {
-      "name": "sha3",
-      "version": "0.2.0",
-      "dependencies": []
-    },
-    {
       "name": "hex",
       "version": "0.2.0",
       "dependencies": []
@@ -612,13 +653,6 @@
       ]
     },
     {
-      "name": "uuid",
-      "version": "3.0.7",
-      "dependencies": [
-        "crypto"
-      ]
-    },
-    {
       "name": "flutter_rust_bridge",
       "version": "1.82.1",
       "dependencies": [
@@ -640,11 +674,6 @@
     {
       "name": "sprintf",
       "version": "7.0.0",
-      "dependencies": []
-    },
-    {
-      "name": "args",
-      "version": "2.7.0",
       "dependencies": []
     },
     {
@@ -763,11 +792,6 @@
     {
       "name": "pinenacl",
       "version": "0.6.0",
-      "dependencies": []
-    },
-    {
-      "name": "asn1lib",
-      "version": "1.6.5",
       "dependencies": []
     },
     {

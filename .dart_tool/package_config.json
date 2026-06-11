@@ -320,6 +320,12 @@
       "languageVersion": "2.19"
     },
     {
+      "name": "jcs_dart",
+      "rootUri": "file:///Users/massimiliano.andreatta/.pub-cache/git/jcs_dart-3a5b2ffd8e4a1624de0cbb1fb4f46216106cdc69/",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
+    },
+    {
       "name": "js",
       "rootUri": "file:///Users/massimiliano.andreatta/.pub-cache/hosted/pub.dev/js-0.6.7",
       "packageUri": "lib/",
@@ -510,6 +516,18 @@
       "rootUri": "file:///Users/massimiliano.andreatta/.pub-cache/hosted/pub.dev/qr_flutter-4.1.0",
       "packageUri": "lib/",
       "languageVersion": "2.19"
+    },
+    {
+      "name": "rsocket",
+      "rootUri": "../third_party/rsocket",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
+    },
+    {
+      "name": "rxdart",
+      "rootUri": "file:///Users/massimiliano.andreatta/.pub-cache/hosted/pub.dev/rxdart-0.27.7",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
     },
     {
       "name": "sha3",
