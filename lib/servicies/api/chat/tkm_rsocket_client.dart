@@ -2,9 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:rsocket/core/rsocket_requester.dart';
 import 'package:rsocket/metadata/composite_metadata.dart';
 import 'package:rsocket/payload.dart';
-import 'package:rsocket/rsocket.dart';
 import 'package:rsocket/rsocket_connector.dart';
 
 /// Low-level RSocket client for rschat (WebSocket + composite routing metadata).
@@ -28,22 +28,59 @@ class TkmRsChatClient {
   static const String _signedUploadMimeType =
       'message/x.io.takamaka.rschat.upload.signed-upload';
 
-  RSocket? _socket;
+  RSocketRequester? _socket;
 
-  bool get isConnected => _socket != null;
+  /// Whether the underlying WebSocket/RSocket transport is open.
+  bool get isConnected => _socket != null && !_socket!.closed;
+
+  /// True when [error] indicates a dead WebSocket (e.g. after server close).
+  static bool isTransportError(Object error) {
+    final text = error.toString().toLowerCase();
+    return text.contains('streamsink is closed') ||
+        text.contains('not connected') ||
+        text.contains('connection closed') ||
+        text.contains('connection reset') ||
+        text.contains('socketexception') ||
+        text.contains('websocket');
+  }
 
   Future<void> connect() async {
-    if (_socket != null) return;
-    _socket = await RSocketConnector.create()
+    if (isConnected) return;
+    await disconnect();
+    final socket = await RSocketConnector.create()
         .dataMimeType('application/json')
         .metadataMimeType('message/x.rsocket.composite-metadata.v0')
         .keepAlive(20, 90)
         .connect(wsUrl)
         .timeout(connectTimeout);
+    if (socket is! RSocketRequester) {
+      throw StateError('Unexpected RSocket implementation: ${socket.runtimeType}');
+    }
+    _socket = socket;
+    _wireTransportCloseHandler(socket);
+  }
+
+  void _wireTransportCloseHandler(RSocketRequester socket) {
+    final connection = socket.connection;
+    final previous = connection.closeHandler;
+    connection.closeHandler = () {
+      previous?.call();
+      if (identical(_socket, socket)) {
+        _socket = null;
+      }
+    };
   }
 
   Future<void> disconnect() async {
+    final socket = _socket;
     _socket = null;
+    socket?.close();
+  }
+
+  /// Drops the transport and opens a fresh WebSocket + RSocket setup.
+  Future<void> forceReconnect() async {
+    await disconnect();
+    await connect();
   }
 
   Future<Map<String, dynamic>?> requestResponse(
@@ -135,7 +172,7 @@ class TkmRsChatClient {
     });
 
     await for (final item in channelFn(payloadStream)) {
-      final text = item?.getDataUtf8();
+      final text = item.getDataUtf8();
       if (text == null || text.isEmpty) continue;
       final decoded = jsonDecode(text);
       if (decoded is Map<String, dynamic>) {
