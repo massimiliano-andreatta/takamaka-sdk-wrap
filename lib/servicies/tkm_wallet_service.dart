@@ -2,7 +2,9 @@ library takamaka_sdk_wrap;
 
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:either_dart/either.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:io_takamaka_core_wallet/io_takamaka_core_wallet.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:takamaka_sdk_wrap/enums/tkm_wallet_enum_type_transaction.dart';
@@ -404,6 +406,73 @@ class TkmWalletService {
 
     // Check if any wallet has the same name
     return wallets.any((w) => w.walletName == walletName);
+  }
+
+  /// Renames a wallet and updates persisted address metadata.
+  ///
+  /// Throws [WalletAlreadyExistsException] when [newName] is already used,
+  /// [WalletNotFoundException] when [oldName] does not exist.
+  static Future<void> renameWallet({
+    required String oldName,
+    required String newName,
+  }) async {
+    final trimmedNewName = newName.trim();
+    if (trimmedNewName.isEmpty) {
+      throw ArgumentError('Wallet name cannot be empty');
+    }
+    if (oldName == trimmedNewName) {
+      return;
+    }
+
+    if (await existWalletByName(walletName: trimmedNewName)) {
+      throw WalletAlreadyExistsException(
+        "A wallet with the name '$trimmedNewName' already exists.",
+      );
+    }
+
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final walletJsonList =
+        List<String>.from(prefs.getStringList(_walletKey) ?? []);
+
+    final existingIndex = walletJsonList.indexWhere((raw) {
+      final map = jsonDecode(raw) as Map<String, dynamic>;
+      return map['walletName'] == oldName;
+    });
+
+    if (existingIndex == -1) {
+      throw WalletNotFoundException('Wallet $oldName not found');
+    }
+
+    final storedMap =
+        jsonDecode(walletJsonList[existingIndex]) as Map<String, dynamic>;
+    storedMap['walletName'] = trimmedNewName;
+
+    final addresses = storedMap['addresses'] as List<dynamic>? ?? [];
+    for (final address in addresses) {
+      (address as Map<String, dynamic>)['walletName'] = trimmedNewName;
+    }
+
+    walletJsonList[existingIndex] = jsonEncode(storedMap);
+    await prefs.setStringList(_walletKey, walletJsonList);
+
+    await _renameWalletSideFiles(oldName: oldName, newName: trimmedNewName);
+  }
+
+  static Future<void> _renameWalletSideFiles({
+    required String oldName,
+    required String newName,
+  }) async {
+    try {
+      final documentsDir = await getApplicationDocumentsDirectory();
+      final walletsRoot = '${documentsDir.path}/wallets';
+      final oldDir = Directory('$walletsRoot/$oldName');
+      final newDir = Directory('$walletsRoot/$newName');
+      if (await oldDir.exists() && !await newDir.exists()) {
+        await oldDir.rename(newDir.path);
+      }
+    } catch (_) {
+      // Non-fatal: encrypted side files may not exist for every wallet.
+    }
   }
 
   /// Calls the API to retrieve a list of staking nodes.

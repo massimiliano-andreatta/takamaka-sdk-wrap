@@ -14,6 +14,8 @@ import 'package:takamaka_sdk_wrap/models/chat/stream_encrypted_descriptor.dart';
 import 'package:takamaka_sdk_wrap/models/chat/upload_status_bean.dart';
 import 'package:takamaka_sdk_wrap/servicies/api/chat/tkm_rsocket_client.dart';
 
+typedef ChatTransportReconnectHandler = Future<void> Function();
+
 /// rschat API facade (RSocket routes from [ChatServerEndpoints]).
 class TkmChatClientApi {
   TkmChatClientApi({required TkmChatEnumEnvironments environment})
@@ -21,8 +23,51 @@ class TkmChatClientApi {
 
   final TkmRsChatClient _client;
 
+  /// Called after the WebSocket is reopened so the server session is restored.
+  ChatTransportReconnectHandler? onTransportReconnect;
+
+  bool get isTransportConnected => _client.isConnected;
+
+  Future<void> forceReconnectTransport() => _client.forceReconnect();
+
+  /// Re-registers the user on a fresh transport (fresh nonce + registeruser).
+  Future<Map<String, dynamic>> reregisterUser({
+    required ChatKeyMaterial keys,
+  }) async {
+    final nonce = await _client.requestResponse(ChatServerEndpoints.nonce);
+    final request = await TkmChatCrypto.buildRegisterUserRequest(
+      keys: keys,
+      nonceResponse: nonce ?? {},
+    );
+    await _client.requestResponse(
+      ChatServerEndpoints.registerUser,
+      request,
+    );
+    return request;
+  }
+
+  Future<Map<String, dynamic>?> _requestResponse(
+    String route, [
+    Object? data,
+  ]) async {
+    try {
+      return await _client.requestResponse(route, data);
+    } catch (e) {
+      if (!TkmRsChatClient.isTransportError(e)) rethrow;
+      await _restoreTransport();
+      return _client.requestResponse(route, data);
+    }
+  }
+
+  Future<void> _restoreTransport() async {
+    await _client.forceReconnect();
+    if (onTransportReconnect != null) {
+      await onTransportReconnect!();
+    }
+  }
+
   Future<Map<String, dynamic>> getNonce() async {
-    final response = await _client.requestResponse(ChatServerEndpoints.nonce);
+    final response = await _requestResponse(ChatServerEndpoints.nonce);
     return response ?? {};
   }
 
@@ -41,7 +86,7 @@ class TkmChatClientApi {
   Future<Map<String, dynamic>> registerUserWithRequest(
     Map<String, dynamic> request,
   ) async {
-    final response = await _client.requestResponse(
+    final response = await _requestResponse(
       ChatServerEndpoints.registerUser,
       request,
     );
@@ -73,7 +118,7 @@ class TkmChatClientApi {
       memberRegisterBeans: members,
       topicKey: topicKey,
     );
-    final response = await _client.requestResponse(
+    final response = await _requestResponse(
       ChatServerEndpoints.createConversation,
       request,
     );
@@ -109,7 +154,7 @@ class TkmChatClientApi {
             citedUsers: citedUsers,
             attachedMedia: attachedMedia,
           );
-    final response = await _client.requestResponse(
+    final response = await _requestResponse(
       ChatServerEndpoints.messages,
       request,
     );
@@ -126,7 +171,7 @@ class TkmChatClientApi {
       conversationHash: conversationHash,
       symmetricKey: symmetricKey,
     );
-    final response = await _client.requestResponse(
+    final response = await _requestResponse(
       ChatServerEndpoints.messages,
       request,
     );
@@ -145,7 +190,7 @@ class TkmChatClientApi {
       symmetricKey: symmetricKey,
       readUpToMessageSignature: readUpToMessageSignature,
     );
-    final response = await _client.requestResponse(
+    final response = await _requestResponse(
       ChatServerEndpoints.messages,
       request,
     );
@@ -166,7 +211,7 @@ class TkmChatClientApi {
       parentMessageSignature: parentMessageSignature,
       emoji: emoji,
     );
-    final response = await _client.requestResponse(
+    final response = await _requestResponse(
       ChatServerEndpoints.messages,
       request,
     );
@@ -187,7 +232,7 @@ class TkmChatClientApi {
       parentMessageSignature: parentMessageSignature,
       newText: newText,
     );
-    final response = await _client.requestResponse(
+    final response = await _requestResponse(
       ChatServerEndpoints.messages,
       request,
     );
@@ -208,7 +253,7 @@ class TkmChatClientApi {
       parentMessageSignature: parentMessageSignature,
       reason: reason,
     );
-    final response = await _client.requestResponse(
+    final response = await _requestResponse(
       ChatServerEndpoints.messages,
       request,
     );
@@ -229,7 +274,7 @@ class TkmChatClientApi {
       targetMessageSignature: targetMessageSignature,
       note: note,
     );
-    final response = await _client.requestResponse(
+    final response = await _requestResponse(
       ChatServerEndpoints.messages,
       request,
     );
@@ -246,7 +291,7 @@ class TkmChatClientApi {
       conversationHash: conversationHash,
       symmetricKey: symmetricKey,
     );
-    final response = await _client.requestResponse(
+    final response = await _requestResponse(
       ChatServerEndpoints.messages,
       request,
     );
@@ -269,7 +314,7 @@ class TkmChatClientApi {
       forwarderNote: forwarderNote,
       claimedOriginPublicKey: claimedOriginPublicKey,
     );
-    final response = await _client.requestResponse(
+    final response = await _requestResponse(
       ChatServerEndpoints.messages,
       request,
     );
@@ -292,7 +337,7 @@ class TkmChatClientApi {
       relayerNote: relayerNote,
       reShared: reShared,
     );
-    final response = await _client.requestResponse(
+    final response = await _requestResponse(
       ChatServerEndpoints.messages,
       request,
     );
@@ -530,7 +575,7 @@ class TkmChatClientApi {
       'conversation_hash=$conversationHash',
     );
     try {
-      final response = await _client.requestResponse(
+      final response = await _requestResponse(
         ChatServerEndpoints.retrieveConversation,
         request,
       );
@@ -605,7 +650,7 @@ class TkmChatClientApi {
       'signature_type': TkmChatSigning.signatureType,
       'fcm_token_registration_signed_content': content,
     };
-    final response = await _client.requestResponse(
+    final response = await _requestResponse(
       ChatServerEndpoints.registerFcmToken,
       request,
     );
