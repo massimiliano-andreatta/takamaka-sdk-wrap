@@ -11,11 +11,14 @@ typedef ChatRsaKeySaver = Future<void> Function(TkmChatRsaKeyPair pair);
 class TkmChatService {
   TkmChatService({
     TkmChatEnumEnvironments environment = TkmChatEnumEnvironments.test,
-  }) : _api = TkmChatClientApi(environment: environment);
+  }) : _api = TkmChatClientApi(environment: environment) {
+    _api.onTransportReconnect = _onTransportReconnect;
+  }
 
   final TkmChatClientApi _api;
   ChatKeyMaterial? _keys;
   Map<String, dynamic>? _registeredUser;
+  bool _restoringTransport = false;
 
   /// Optional persistence for the RSA-4096 invite key (must survive restarts).
   ChatRsaKeyLoader? rsaKeyLoader;
@@ -24,6 +27,26 @@ class TkmChatService {
   TkmChatClientApi get api => _api;
   ChatKeyMaterial? get keys => _keys;
   Map<String, dynamic>? get registeredUser => _registeredUser;
+  bool get isTransportConnected => _api.isTransportConnected;
+
+  Future<void> _onTransportReconnect() async {
+    if (_restoringTransport) return;
+    final keys = _keys;
+    if (keys == null) return;
+    _restoringTransport = true;
+    try {
+      _registeredUser = await _api.reregisterUser(keys: keys);
+    } finally {
+      _restoringTransport = false;
+    }
+  }
+
+  /// Opens a fresh WebSocket and re-runs registeruser when the transport died.
+  Future<void> ensureLiveTransport() async {
+    if (isTransportConnected && _registeredUser != null) return;
+    await _api.forceReconnectTransport();
+    await _onTransportReconnect();
+  }
 
   Future<void> initializeSession({
     required String walletSeed,
