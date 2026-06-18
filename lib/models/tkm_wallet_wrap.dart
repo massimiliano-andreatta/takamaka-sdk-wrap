@@ -8,6 +8,7 @@ import 'package:io_takamaka_core_wallet/io_takamaka_core_wallet.dart';
 import 'tkm_wallet_address.dart';
 import 'tkm_wallet_exceptions.dart';
 import 'package:path/path.dart' as path;
+import 'package:path_provider/path_provider.dart';
 
 class TkmWalletWrap {
   // Constants for wallet file extension and path
@@ -86,23 +87,134 @@ class TkmWalletWrap {
     return _addresses;
   }
 
-  // Async method to retrieve the wallet file
-  Future<File> getFile() async {
-    await writeEncryptedKeyFiles();
-    String separator = path.separator;
-    String fullPath =
-        _walletDirectory + separator + walletName + _walletExtension;
-    return File(fullPath);
+  /// Prefix for encrypted wallet backup files on disk and in the cloud.
+  static const String walletBackupFilePrefix = 'tkm_wallet_';
+
+  /// Builds a safe on-disk backup base name: `tkm_wallet_<address>_<epochMs>`.
+  static String buildBackupBaseName(String address) {
+    final safeAddress = address
+        .replaceAll(RegExp(r'[./\\:]'), '_')
+        .replaceAll(RegExp(r'_+'), '_')
+        .replaceAll(RegExp(r'_$'), '');
+    return '${walletBackupFilePrefix}${safeAddress}_${DateTime.now().millisecondsSinceEpoch}';
   }
 
-  Future<void> writeEncryptedKeyFiles() async {
-    var concat = _generatedWordsPreInitWallet.join(" ");
-    KeyBean kb = KeyBean("0.1", "POWSEED", "Ed25519BC", _seed!, concat);
-    String separator = path.separator;
-    String fullPath =
-        _walletDirectory + separator + walletName + _walletExtension;
-    await WalletUtils.writeEncryptedKeyFiles(fullPath, _walletDirectory,
-        _walletName, _walletExtension, kb, _password!);
+  /// Human-readable label for a backup file name or path.
+  static String formatBackupDisplayName(String fileNameOrPath) {
+    var name = path.basename(fileNameOrPath);
+    if (name.toLowerCase().endsWith('.wallet')) {
+      name = name.substring(0, name.length - '.wallet'.length);
+    }
+    if (name.startsWith(walletBackupFilePrefix)) {
+      name = name.substring(walletBackupFilePrefix.length);
+    }
+    return name;
+  }
+
+  /// Sanitizes a user-chosen backup label into a safe `.wallet` file name.
+  static String sanitizeFriendlyBackupFileName(String input) {
+    var name = input.trim();
+    if (name.isEmpty) {
+      throw ArgumentError('Backup name cannot be empty');
+    }
+    if (name.toLowerCase().endsWith('.wallet')) {
+      name = name.substring(0, name.length - '.wallet'.length);
+    }
+    name = name
+        .replaceAll(RegExp(r'[./\\:]+'), '_')
+        .replaceAll(RegExp(r'_+'), '_')
+        .replaceAll(RegExp(r'^_|_$'), '');
+    if (name.isEmpty) {
+      throw ArgumentError('Backup name cannot be empty');
+    }
+    return '$name.wallet';
+  }
+
+  /// Normalizes a Takamaka address for comparison with backup file name segments.
+  static String normalizeAddressForBackupMatch(String address) {
+    return address
+        .replaceAll(RegExp(r'[./\\:]'), '_')
+        .replaceAll(RegExp(r'_+'), '_')
+        .replaceAll(RegExp(r'_$'), '');
+  }
+
+  /// Extracts the wallet address embedded in an auto-generated backup file name.
+  ///
+  /// Returns null for friendly renames that no longer follow
+  /// `tkm_wallet_<address>_<epochMs>.wallet`.
+  static String? extractBackedUpAddress(String fileNameOrPath) {
+    var baseName = path.basename(fileNameOrPath);
+    if (!baseName.toLowerCase().endsWith('.wallet')) {
+      return null;
+    }
+    if (!baseName.startsWith(walletBackupFilePrefix)) {
+      return null;
+    }
+
+    var stem = baseName.substring(0, baseName.length - '.wallet'.length);
+    stem = stem.substring(walletBackupFilePrefix.length);
+    final lastUnderscore = stem.lastIndexOf('_');
+    if (lastUnderscore <= 0) {
+      return null;
+    }
+
+    final epochPart = stem.substring(lastUnderscore + 1);
+    if (int.tryParse(epochPart) == null) {
+      return null;
+    }
+
+    return normalizeAddressForBackupMatch(stem.substring(0, lastUnderscore));
+  }
+
+  /// Whether [liveAddress] matches the address encoded in a backup file name.
+  static bool backupAddressMatches(
+    String safeAddressInFile,
+    String liveAddress,
+  ) {
+    return normalizeAddressForBackupMatch(safeAddressInFile) ==
+        normalizeAddressForBackupMatch(liveAddress);
+  }
+
+  /// Writes the encrypted wallet backup file and returns its absolute path.
+  Future<File> writeEncryptedKeyFiles({String? backupBaseName}) async {
+    final fileBaseName = backupBaseName ?? walletName;
+    final concat = _generatedWordsPreInitWallet.join(' ');
+    final kb = KeyBean('0.1', 'POWSEED', 'Ed25519BC', _seed!, concat);
+
+    // Creates wallets/<walletName>/ side files (words_enc, seed_enc).
+    final ekb = CryptoMisc.encryptWallet(
+      kb,
+      _walletDirectory,
+      _walletName,
+      _password!,
+    );
+
+    final documentsDir = await getApplicationDocumentsDirectory();
+    final outputFile = File(
+      path.join(
+        documentsDir.path,
+        _walletDirectory,
+        '$fileBaseName$_walletExtension',
+      ),
+    );
+    await outputFile.parent.create(recursive: true);
+    await outputFile.writeAsString(jsonEncode(ekb.toJson()));
+    return outputFile;
+  }
+
+  /// Returns the encrypted wallet backup file after ensuring it exists on disk.
+  ///
+  /// [backupBaseName] overrides the on-disk file name (without extension).
+  /// The logical [walletName] is still used for encryption metadata.
+  Future<File> getFile({String? backupBaseName}) async {
+    final file = await writeEncryptedKeyFiles(backupBaseName: backupBaseName);
+    if (!await file.exists()) {
+      throw FileSystemException(
+        'Wallet backup file missing after write',
+        file.path,
+      );
+    }
+    return file;
   }
 
   static Future<TkmWalletWrap> restoreFromKeyWords(
