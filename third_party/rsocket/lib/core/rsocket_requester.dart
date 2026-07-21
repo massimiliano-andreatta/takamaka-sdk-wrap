@@ -283,6 +283,18 @@ class RSocketRequester extends RSocket {
       closed = true;
       _availability = 0.0;
       keepAliveTimer?.cancel();
+      // Fail pending requests/streams so callers can observe the dead
+      // transport (onError/onDone) instead of waiting forever.
+      final pending = senders.values.toList();
+      senders.clear();
+      for (final subscriber in pending) {
+        try {
+          subscriber.onError(RSocketException(
+              RSocketErrorCode.CONNECTION_CLOSE, 'Connection closed'));
+        } catch (_) {
+          // Subscriber teardown must not prevent closing the transport.
+        }
+      }
       connection.close();
     }
   }
