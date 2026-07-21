@@ -253,14 +253,26 @@ class RSocketRequester extends RSocket {
     connection.init();
     connection.write(setupPayloadFrame());
     if (mode == 'requester') {
-      keepAliveTimer = Timer.periodic(
-          Duration(seconds: connectionSetupPayload!.keepAliveInterval),
-          (Timer t) {
-        if (!closed) {
-          connection.write(FrameCodec.encodeKeepAlive(false, 0));
-        } else {
+      // keepAliveInterval/keepAliveMaxLifetime are in milliseconds (see
+      // RSocketConnector.connect). Ask the server to respond (respond=true)
+      // so inbound traffic doubles as a liveness signal for the watchdog.
+      _lastInboundAt = DateTime.now();
+      final interval =
+          Duration(milliseconds: connectionSetupPayload!.keepAliveInterval);
+      final maxLifetime =
+          Duration(milliseconds: connectionSetupPayload!.keepAliveMaxLifetime);
+      keepAliveTimer = Timer.periodic(interval, (Timer t) {
+        if (closed) {
           keepAliveTimer?.cancel();
+          return;
         }
+        // Half-open detection: nothing received within max lifetime means the
+        // transport is dead even if the local socket still looks open.
+        if (DateTime.now().difference(_lastInboundAt) > maxLifetime) {
+          close();
+          return;
+        }
+        connection.write(FrameCodec.encodeKeepAlive(true, 0));
       });
     }
   }
