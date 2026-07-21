@@ -333,6 +333,7 @@ class RSocketRequester extends RSocket {
   }
 
   void receiveFrame(RSocketFrame frame) {
+    _lastInboundAt = DateTime.now();
     var header = frame.header;
     var streamId = header.streamId;
     switch (header.type) {
