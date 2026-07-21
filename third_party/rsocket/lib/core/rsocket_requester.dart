@@ -140,6 +140,7 @@ class RSocketRequester extends RSocket {
   bool closed = false;
   double _availability = 1.0;
   Timer? keepAliveTimer;
+  DateTime _lastInboundAt = DateTime.now();
   late StreamIdSupplier streamIdSupplier;
   ConnectionSetupPayload? connectionSetupPayload;
   late DuplexConnection connection;

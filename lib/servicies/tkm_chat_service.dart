@@ -48,6 +48,15 @@ class TkmChatService {
     await _onTransportReconnect();
   }
 
+  /// Forces a fresh WebSocket and re-runs registeruser even when the current
+  /// transport still looks open. Needed after a long background period: the
+  /// OS can kill the connection without closing the local socket (half-open),
+  /// so [isTransportConnected] cannot be trusted.
+  Future<void> restartTransport() async {
+    await _api.forceReconnectTransport();
+    await _onTransportReconnect();
+  }
+
   Future<void> initializeSession({
     required String walletSeed,
     int signKeyIndex = 0,
