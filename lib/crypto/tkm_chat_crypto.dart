@@ -49,6 +49,46 @@ abstract final class TkmChatCrypto {
     );
   }
 
+  /// Builds a signed FCM push-token registration request for the rschat
+  /// `registerfcmtoken` / `unregisterfcmtoken` routes (the server accepts the
+  /// same FCM_TOKEN_REGISTRATION envelope for both — the route differs, not the
+  /// payload). Only the Ed25519 signing key of [keys] is used (no RSA).
+  ///
+  /// [nonceResponse] must be the nonce map fetched from the server, echoed
+  /// verbatim. The app supplies [fcmToken] from firebase_messaging and
+  /// [platform] as 'android' | 'ios'.
+  ///
+  /// IMPORTANT: [deviceId] is ALWAYS placed in the signed content, even when
+  /// null, as `device_id: null`. The Java server serializes it that way and the
+  /// signature is over the canonical JSON, so dropping the key when null would
+  /// break signature verification (see FcmCanonicalVectorTest golden vectors).
+  static Future<Map<String, dynamic>> buildFcmTokenRegistrationRequest({
+    required ChatKeyMaterial keys,
+    required Map<String, dynamic> nonceResponse,
+    required String fcmToken,
+    required String platform,
+    String? deviceId,
+  }) async {
+    final content = <String, dynamic>{
+      'nonce': nonceResponse,
+      'fcm_token': fcmToken,
+      'platform': platform,
+      'device_id': deviceId,
+    };
+    final signature = await TkmChatSigning.signCanonicalJson(
+      keys.signKeyPair,
+      content,
+    );
+    final from = await TkmChatSigning.publicKeyUrl64(keys.signKeyPair);
+    return TkmChatSigning.signedEnvelope(
+      from: from,
+      signature: signature,
+      messageType: ChatMessageTypes.fcmTokenRegistration,
+      signedContentKey: 'fcm_token_registration_signed_content',
+      signedContentField: content,
+    );
+  }
+
   static Future<Map<String, dynamic>> buildRequestKeysRequest({
     required ChatKeyMaterial keys,
     required List<String> otherUserSignKeys,

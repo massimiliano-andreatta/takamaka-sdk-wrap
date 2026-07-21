@@ -6,6 +6,7 @@ abstract final class ChatMessageTypes {
   static const String topicCreation = 'TOPIC_CREATION';
   static const String topicMessage = 'TOPIC_MESSAGE';
   static const String notificationRequest = 'NOTIFICATION_REQUEST';
+  static const String fcmTokenRegistration = 'FCM_TOKEN_REGISTRATION';
   static const String retrieveMessageLastN =
       'RETRIEVE_MESSAGE_FROM_CONVERSATION_LAST_N';
   static const String retrieveMessageBySignature =
