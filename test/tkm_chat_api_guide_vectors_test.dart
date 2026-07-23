@@ -67,7 +67,8 @@ void main() {
       for (final env in TkmChatEnumEnvironments.values) {
         expect(env.wsUrl, startsWith('wss://'));
         expect(env.wsUrl, endsWith('/rschat'));
-        expect(env.wsUrl, contains('rschat.takamaka.org'));
+        // test -> rschat-test.takamaka.org, production -> rschat.takamaka.org
+        expect(env.wsUrl, matches(RegExp(r'^wss://rschat(-test)?\.takamaka\.org/')));
       }
     });
   });
