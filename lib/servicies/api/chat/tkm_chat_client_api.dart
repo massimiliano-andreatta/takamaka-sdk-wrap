@@ -3,11 +3,9 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
-import 'package:takamaka_sdk_wrap/constants/chat_message_types.dart';
 import 'package:takamaka_sdk_wrap/constants/chat_server_endpoints.dart';
 import 'package:takamaka_sdk_wrap/crypto/tkm_chat_attachment.dart';
 import 'package:takamaka_sdk_wrap/crypto/tkm_chat_crypto.dart';
-import 'package:takamaka_sdk_wrap/crypto/tkm_chat_signing.dart';
 import 'package:takamaka_sdk_wrap/enums/tkm_chat_enums_api.dart';
 import 'package:takamaka_sdk_wrap/models/chat/chat_key_material.dart';
 import 'package:takamaka_sdk_wrap/models/chat/stream_encrypted_descriptor.dart';
@@ -627,6 +625,16 @@ class TkmChatClientApi {
     );
   }
 
+  /// Register this device's FCM token so the server can push to it while the
+  /// notification stream is closed.
+  ///
+  /// Delegates to [TkmChatCrypto.buildFcmTokenRegistrationRequest] rather than
+  /// assembling the envelope here. This method previously built its own and
+  /// wrote `if (deviceId != null) 'device_id': deviceId`, dropping the key for
+  /// a null device — but the server's signed content is a Lombok `@Data` bean
+  /// with no NON_NULL inclusion, so it canonicalises to `"device_id":null` and
+  /// verification failed on exactly the common case of an unset device id. The
+  /// shared builder is the one covered by the cross-language golden vectors.
   Future<Map<String, dynamic>> registerFcmToken({
     required ChatKeyMaterial keys,
     required Map<String, dynamic> nonce,
@@ -634,24 +642,41 @@ class TkmChatClientApi {
     required String platform,
     String? deviceId,
   }) async {
-    final content = {
-      'nonce': nonce,
-      'fcm_token': fcmToken,
-      'platform': platform,
-      if (deviceId != null) 'device_id': deviceId,
-    };
-    final signature =
-        await TkmChatSigning.signCanonicalJson(keys.signKeyPair, content);
-    final from = await TkmChatSigning.publicKeyUrl64(keys.signKeyPair);
-    final request = {
-      'from': from,
-      'signature': signature,
-      'message_type': 'FCM_TOKEN_REGISTRATION',
-      'signature_type': TkmChatSigning.signatureType,
-      'fcm_token_registration_signed_content': content,
-    };
+    final request = await TkmChatCrypto.buildFcmTokenRegistrationRequest(
+      keys: keys,
+      nonceResponse: nonce,
+      fcmToken: fcmToken,
+      platform: platform,
+      deviceId: deviceId,
+    );
     final response = await _requestResponse(
       ChatServerEndpoints.registerFcmToken,
+      request,
+    );
+    return response ?? {};
+  }
+
+  /// Stop pushes to this device's FCM token (soft delete server-side).
+  ///
+  /// Carries the same `FCM_TOKEN_REGISTRATION` message type and signed content
+  /// as registration — the route is what distinguishes the two — so call it on
+  /// logout, before discarding the identity's keys.
+  Future<Map<String, dynamic>> unregisterFcmToken({
+    required ChatKeyMaterial keys,
+    required Map<String, dynamic> nonce,
+    required String fcmToken,
+    required String platform,
+    String? deviceId,
+  }) async {
+    final request = await TkmChatCrypto.buildFcmTokenRegistrationRequest(
+      keys: keys,
+      nonceResponse: nonce,
+      fcmToken: fcmToken,
+      platform: platform,
+      deviceId: deviceId,
+    );
+    final response = await _requestResponse(
+      ChatServerEndpoints.unregisterFcmToken,
       request,
     );
     return response ?? {};
