@@ -180,17 +180,43 @@ against those vectors before debugging anything else.
 |---|---|
 | `nonce` | Fetch a fresh nonce (request-response) |
 | `registerfcmtoken` | Register/refresh this device's token |
-| `unregisterfcmtoken` | Soft-delete the token (call on logout) |
+| `unregisterfcmtoken` | Soft-delete: clears `is_active`, keeps the row |
+| `deletefcmtoken` | **Hard delete** of this device's row (identity switch) |
+| `deleteallfcmtokens` | **Hard delete** of every row of the signing identity |
 | `notification` | **Live notification stream — this is presence** |
 | `notificationhistory` | Buffered history |
 
-Register and unregister carry the **same** `message_type`
-(`FCM_TOKEN_REGISTRATION`) and the same content shape; only the route differs.
+All four carry the **same** `message_type` (`FCM_TOKEN_REGISTRATION`) and the
+same content shape; only the route differs.
+
+**Soft vs hard delete — pick the right one.** `unregisterfcmtoken` only flips
+`is_active` and leaves the row until the 30-day sweep. The server keys that
+table on the **token hash alone**, so a leftover row makes the *next* identity's
+registration of the same device token fail with a duplicate-key error, and the
+device then silently receives nothing. So:
+
+- **identity switch / logout on a device that keeps running** → `deletefcmtoken`;
+- **"stop pushing to all my devices"** → `deleteallfcmtokens`;
+- `unregisterfcmtoken` remains for pausing pushes while keeping the row.
+
+The two delete routes **consume the nonce**: fetch a fresh one per call, and
+they cannot be replayed. Both are scoped to the signing identity — they can
+never remove another identity's rows, including on a shared device — and both
+are idempotent, answering `deleted_count: 0` rather than an error when nothing
+matched. `deleteallfcmtokens` ignores the signed `fcm_token`, so a caller that
+no longer holds a device token may sign a blank one.
 
 ### Response and error codes
 
 ```json
 { "success": true, "message": null, "error_code": null, "registration_time": 1785235508343 }
+```
+
+The delete routes answer a different shape — a row count instead of a
+registration time:
+
+```json
+{ "success": true, "message": "FCM token(s) deleted successfully", "error_code": null, "deleted_count": 1 }
 ```
 
 | `error_code` | Cause | Client action |
@@ -201,6 +227,9 @@ Register and unregister carry the **same** `message_type`
 | `INVALID_PLATFORM` | Not android/ios/web | Bug |
 | `TOKEN_LIMIT_EXCEEDED` | User at `max-tokens-per-user` (default 10) | Prompt to unregister old devices |
 | `REGISTRATION_ERROR` | Server-side failure | Retry once, then surface |
+| `NONCE_INVALID` | Delete routes only: nonce unknown, expired or already spent | Fetch a fresh nonce and re-sign |
+| `VALIDATION_ERROR` | Delete routes only: missing signed content or malformed nonce | Bug |
+| `DELETION_ERROR` | Delete routes only: server-side failure | Retry once, then surface |
 
 Server-side, tokens inactive for `stale-token-days` (default 30) are swept, and
 tokens FCM reports as unregistered/invalid (HTTP 404 `UNREGISTERED`, or 400
@@ -365,7 +394,12 @@ replaces rather than stacks, and cancel it when the user opens that chat.
 5. Foreground: `notification` stream delivers events in-band; pushes should be rare.
 6. Backgrounded / killed: server sees no sink → push arrives → background isolate renders the banner.
 7. Tap → open the conversation (`onMessageOpenedApp`, plus `getInitialMessage()` for a cold start from a tap).
-8. Logout → `unregisterFcmToken`, then cancel the notification subscription.
+8. Identity switch → `deleteFcmToken` for the outgoing identity, then register
+   the incoming one. Do **not** use `unregisterFcmToken` here: it leaves the row
+   and the re-registration fails on the token-hash primary key (see §3).
+9. Logout → `deleteFcmToken` (or `deleteAllFcmTokens` to clear every device),
+   then cancel the notification subscription. Sign it **before** discarding the
+   identity's keys.
 
 ---
 
@@ -403,6 +437,36 @@ Alternatively `FCM_CREDENTIALS_JSON` with the JSON inline. With
 `FCM_ENABLED=false`, `registerToken` returns **success without storing
 anything** and no push is ever sent — an easy way to spend an hour debugging a
 client that is actually fine.
+
+### The client and the server must be on the same Firebase project
+
+A registration token is only meaningful to the project that minted it. If your
+`google-services.json` / `GoogleService-Info.plist` names one project and the
+server's service-account credential names another, registration succeeds, the
+token persists, and **every push fails** — the server logs a dispatch and FCM
+answers `UNREGISTERED`, which deactivates the row. Nothing in the client's logs
+says why.
+
+The test server (`rschat-test01`) runs against **`fluttertakiapp`** as of
+2026-08-03, moved off the throwaway `takamaka-chat-test` project. Build against
+that project, and re-run `flutterfire configure` if you were previously pointed
+elsewhere.
+
+Two failure modes worth separating when a send breaks:
+
+- `403 PERMISSION_DENIED` — the service account lacks
+  `cloudmessaging.messages.create`. Grant *Firebase Cloud Messaging API Admin*
+  to the `firebase-adminsdk-…` account **named in the key file**; granting it to
+  the Google-managed `service-<num>@gcp-sa-firebase` account does nothing. A
+  freshly created project trips this every time.
+- `400 INVALID_ARGUMENT` naming `message.token` — credentials and IAM are fine,
+  the token is simply stale or from another project.
+
+You can tell these apart before touching a server: sign an RS256 JWT with the
+service-account key, exchange it at `oauth2.googleapis.com`, then POST to
+`messages:send` with `"validate_only": true` and a deliberately invalid token.
+A 400 about the token means auth and IAM are good; a 403 means they are not.
+Nothing is delivered either way.
 
 The schema is **applied manually**: run `420-fcm-tokens.sql` against the
 database before enabling FCM.
@@ -447,11 +511,23 @@ returns null with `AUTHENTICATION_FAILED` unless a Google account is signed in
 
 **iOS.** Not yet exercised end to end. You will need:
 
-- an APNs auth key (`.p8`) uploaded to Firebase;
+- an APNs auth key (`.p8`) uploaded to Firebase, with its Key ID and the team's
+  10-character Team ID. Reported uploaded by the flutter_base developer on
+  2026-08-03 — **not verified from our side.** It has to land on the *same*
+  project the server uses (see §6); an APNs key on the wrong project fails
+  silently, with iOS simply never receiving anything.
+- Push Notifications capability, Background Modes → Remote notifications, and
+  the `aps-environment` entitlement on the iOS target;
 - a **Notification Service Extension** (native Swift). The payload is
   zero-knowledge, so the extension is what decrypts locally and rewrites the
   banner into something meaningful. `mutable-content: 1` (already sent) is what
-  wakes it.
+  wakes it. Still outstanding.
+
+The `.p8` is a high-value credential: unless it was created restricted to a
+single topic, one key can push to every app in the team, in both sandbox and
+production, and it never expires. Keep it in the password manager, never in a
+repo, and revoke via developer.apple.com → Keys if it is ever sent over an
+unencrypted channel.
 
 Do not switch iOS to a pure silent `content-available` push — it is throttled
 and unreliable, which is exactly why the server sends a generic alert instead.
@@ -507,7 +583,7 @@ push for every message plus the in-band copy.
 
 | Thing | Value |
 |---|---|
-| Message type (register **and** unregister) | `FCM_TOKEN_REGISTRATION` |
+| Message type (register, unregister **and** both deletes) | `FCM_TOKEN_REGISTRATION` |
 | Signature type | `Ed25519BC` |
 | Signed content key | `fcm_token_registration_signed_content` |
 | Canonicalisation | JCS / RFC 8785, over the **content**, not the envelope |
@@ -516,6 +592,7 @@ push for every message plus the in-band copy.
 | Payload keys | `type`, `timestamp`, `conversation_hash`, `sender_pk`, `v` |
 | Presence source | the `notification` request-stream — nothing else |
 | Test server | `wss://rschat-test.takamaka.org/rschat` (`TkmChatEnumEnvironments.test`) |
+| Firebase project (test) | `fluttertakiapp` — client and server must match, see §6 |
 | Production | `wss://rschat.takamaka.org/rschat` (`TkmChatEnumEnvironments.production`) |
 
 SDK entry points (`TkmChatClientApi`):
@@ -526,7 +603,12 @@ Stream<Map<String, dynamic>> subscribeNotifications({keys, notBefore, onlyUnread
 Stream<Map<String, dynamic>> retrieveNotificationHistory({keys, notBefore, onlyUnread});
 Future<Map<String, dynamic>> registerFcmToken({keys, nonce, fcmToken, platform, deviceId});
 Future<Map<String, dynamic>> unregisterFcmToken({keys, nonce, fcmToken, platform, deviceId});
+Future<Map<String, dynamic>> deleteFcmToken({keys, nonce, fcmToken, platform, deviceId});
+Future<Map<String, dynamic>> deleteAllFcmTokens({keys, nonce, fcmToken = '', platform = 'android', deviceId});
 ```
+
+The two delete calls need a **fresh nonce each time** — the server consumes it —
+and answer `deleted_count` instead of `registration_time`.
 
 Lower level, if you need the envelope without sending it:
 `TkmChatCrypto.buildFcmTokenRegistrationRequest(keys:, nonceResponse:, fcmToken:, platform:, deviceId:)`.
