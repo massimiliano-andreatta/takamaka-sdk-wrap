@@ -199,8 +199,16 @@ device then silently receives nothing. So:
 - **"stop pushing to all my devices"** → `deleteallfcmtokens`;
 - `unregisterfcmtoken` remains for pausing pushes while keeping the row.
 
-The two delete routes **consume the nonce**: fetch a fresh one per call, and
-they cannot be replayed. Both are scoped to the signing identity — they can
+**Every one of the four routes consumes the nonce.** Fetch a fresh one per call
+and never cache or reuse one; a second use answers `NONCE_INVALID`, including a
+retry of a call that already reached the server. This is what stops a captured
+envelope being re-aimed: the signature covers only the signed *content*, not
+`message_type` and not the route, so identical bytes are valid at all four —
+without single-use nonces, an observed registration could be resent verbatim at
+`deleteallfcmtokens` to switch a user's push off. Spending the nonce on first
+use makes the captured copy worthless.
+
+The delete routes are additionally scoped to the signing identity — they can
 never remove another identity's rows, including on a shared device — and both
 are idempotent, answering `deleted_count: 0` rather than an error when nothing
 matched. `deleteallfcmtokens` ignores the signed `fcm_token`, so a caller that
@@ -227,9 +235,9 @@ registration time:
 | `INVALID_PLATFORM` | Not android/ios/web | Bug |
 | `TOKEN_LIMIT_EXCEEDED` | User at `max-tokens-per-user` (default 10) | Prompt to unregister old devices |
 | `REGISTRATION_ERROR` | Server-side failure | Retry once, then surface |
-| `NONCE_INVALID` | Delete routes only: nonce unknown, expired or already spent | Fetch a fresh nonce and re-sign |
-| `VALIDATION_ERROR` | Delete routes only: missing signed content or malformed nonce | Bug |
-| `DELETION_ERROR` | Delete routes only: server-side failure | Retry once, then surface |
+| `NONCE_INVALID` | Nonce unknown, expired or already spent — **any** route | Fetch a fresh nonce and re-sign; never retry with the old one |
+| `VALIDATION_ERROR` | Missing signed content, or a nonce that is not a UUID | Bug |
+| `UNREGISTRATION_ERROR` / `DELETION_ERROR` | Server-side failure | Retry once **with a new nonce**, then surface |
 
 Server-side, tokens inactive for `stale-token-days` (default 30) are swept, and
 tokens FCM reports as unregistered/invalid (HTTP 404 `UNREGISTERED`, or 400
@@ -291,7 +299,9 @@ connected. Also re-register:
 - on every cold start, since a token can change while the app is closed.
 
 Registration is idempotent: an existing (user, token) pair is updated rather
-than duplicated.
+than duplicated. The *nonce* is not — each call needs its own
+`await chatApi.getNonce()`. Re-registering on token refresh or cold start is
+fine; re-sending the same signed envelope is not.
 
 ### Unregistering on logout
 
