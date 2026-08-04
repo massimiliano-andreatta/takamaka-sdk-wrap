@@ -20,6 +20,8 @@ void main() {
       ChatServerEndpoints.retrieveAttachment,
       ChatServerEndpoints.registerFcmToken,
       ChatServerEndpoints.unregisterFcmToken,
+      ChatServerEndpoints.deleteFcmToken,
+      ChatServerEndpoints.deleteAllFcmTokens,
       ChatServerEndpoints.timeUpdatesStream,
     ];
 
@@ -34,6 +36,24 @@ void main() {
       ChatServerEndpoints.timeUpdatesStream,
       'my.time-updates.stream',
     );
+  });
+
+  /// The four FCM routes are distinct operations on the same envelope: the
+  /// route, not the payload, says whether a token is created, disabled or
+  /// removed. Colliding names would silently reroute a delete to a disable.
+  test('fcm token lifecycle routes are four distinct names', () {
+    expect(ChatServerEndpoints.registerFcmToken, 'registerfcmtoken');
+    expect(ChatServerEndpoints.unregisterFcmToken, 'unregisterfcmtoken');
+    expect(ChatServerEndpoints.deleteFcmToken, 'deletefcmtoken');
+    expect(ChatServerEndpoints.deleteAllFcmTokens, 'deleteallfcmtokens');
+
+    const fcmRoutes = {
+      ChatServerEndpoints.registerFcmToken,
+      ChatServerEndpoints.unregisterFcmToken,
+      ChatServerEndpoints.deleteFcmToken,
+      ChatServerEndpoints.deleteAllFcmTokens,
+    };
+    expect(fcmRoutes.length, 4);
   });
 
   test('core chat flows use documented route names', () {

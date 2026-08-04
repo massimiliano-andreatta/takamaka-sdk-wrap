@@ -98,5 +98,33 @@ void main() {
     test('registerfcmtoken envelope with null device → verifies', () async {
       await expectRoundTrip(null, vectorNullDevice);
     });
+
+    /// deleteallfcmtokens selects rows by the signing identity and ignores the
+    /// token field, so a caller that no longer holds a device token signs a
+    /// blank one. The envelope must still verify — an empty string is signed
+    /// content like any other, not an omitted key.
+    test('deleteallfcmtokens envelope with blank token → verifies', () async {
+      final request = await TkmChatCrypto.buildFcmTokenRegistrationRequest(
+        keys: keys,
+        nonceResponse: fixedNonce,
+        fcmToken: '',
+        platform: fixedPlatform,
+        deviceId: null,
+      );
+
+      final content = request['fcm_token_registration_signed_content']
+          as Map<String, dynamic>;
+      expect(content['fcm_token'], '');
+
+      final canonical = TkmCanonicalJson.encode(content);
+      expect(canonical, contains('"fcm_token":""'));
+
+      final valid = await TkmChatSigning.verifyUtf8Message(
+        publicKeyUrl64: request['from'] as String,
+        signatureUrl64: request['signature'] as String,
+        message: canonical,
+      );
+      expect(valid, isTrue);
+    });
   });
 }

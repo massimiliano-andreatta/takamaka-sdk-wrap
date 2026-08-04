@@ -15,5 +15,7 @@ abstract final class ChatServerEndpoints {
   static const String retrieveAttachment = 'retrieveattachment';
   static const String registerFcmToken = 'registerfcmtoken';
   static const String unregisterFcmToken = 'unregisterfcmtoken';
+  static const String deleteFcmToken = 'deletefcmtoken';
+  static const String deleteAllFcmTokens = 'deleteallfcmtokens';
   static const String timeUpdatesStream = 'my.time-updates.stream';
 }

@@ -682,5 +682,72 @@ class TkmChatClientApi {
     return response ?? {};
   }
 
+  /// Permanently remove this device's token registration (hard delete).
+  ///
+  /// Prefer this over [unregisterFcmToken] when the device keeps running and
+  /// only the identity changes. Unregistering merely clears `is_active` and
+  /// leaves the row, and because the server keys that table on the token hash
+  /// alone, the leftover row blocks the *next* identity from registering the
+  /// same device token — the device then silently receives nothing. Deleting
+  /// the row frees it.
+  ///
+  /// The server consumes the [nonce], so each call needs a fresh one and the
+  /// envelope cannot be replayed. Idempotent: deleting a token that is not
+  /// registered answers `deleted_count: 0` with `success: true`.
+  ///
+  /// Answers the server's deletion response, e.g.
+  /// `{success: true, deleted_count: 1, message: ...}`.
+  Future<Map<String, dynamic>> deleteFcmToken({
+    required ChatKeyMaterial keys,
+    required Map<String, dynamic> nonce,
+    required String fcmToken,
+    required String platform,
+    String? deviceId,
+  }) async {
+    final request = await TkmChatCrypto.buildFcmTokenRegistrationRequest(
+      keys: keys,
+      nonceResponse: nonce,
+      fcmToken: fcmToken,
+      platform: platform,
+      deviceId: deviceId,
+    );
+    final response = await _requestResponse(
+      ChatServerEndpoints.deleteFcmToken,
+      request,
+    );
+    return response ?? {};
+  }
+
+  /// Permanently remove every token this identity has registered — "stop
+  /// pushing to all my devices".
+  ///
+  /// The server selects rows by the signing identity alone and ignores the
+  /// signed `fcm_token`, so [fcmToken] defaults to empty for a caller that no
+  /// longer holds a live device token. Scoped to the signer: it can never
+  /// touch another identity's registrations, including on a shared device.
+  ///
+  /// The server consumes the [nonce]. Idempotent: an identity with no tokens
+  /// answers `deleted_count: 0` with `success: true`.
+  Future<Map<String, dynamic>> deleteAllFcmTokens({
+    required ChatKeyMaterial keys,
+    required Map<String, dynamic> nonce,
+    String fcmToken = '',
+    String platform = 'android',
+    String? deviceId,
+  }) async {
+    final request = await TkmChatCrypto.buildFcmTokenRegistrationRequest(
+      keys: keys,
+      nonceResponse: nonce,
+      fcmToken: fcmToken,
+      platform: platform,
+      deviceId: deviceId,
+    );
+    final response = await _requestResponse(
+      ChatServerEndpoints.deleteAllFcmTokens,
+      request,
+    );
+    return response ?? {};
+  }
+
   Future<void> disconnect() => _client.disconnect();
 }
