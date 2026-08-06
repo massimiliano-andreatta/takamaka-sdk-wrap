@@ -2,6 +2,7 @@
 abstract final class ChatMessageTypes {
   static const String registerUserSignedRequest =
       'REGISTER_USER_SIGNED_REQUEST';
+  static const String fcmTokenRegistration = 'FCM_TOKEN_REGISTRATION';
   static const String requestUserKeys = 'REQUEST_USER_KEYS';
   static const String topicCreation = 'TOPIC_CREATION';
   static const String topicMessage = 'TOPIC_MESSAGE';

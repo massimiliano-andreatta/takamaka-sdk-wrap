@@ -91,8 +91,13 @@ class WebSocketDuplexConnection extends DuplexConnection {
 
   @override
   void write(Uint8List chunk) {
-    //remove frame length: 3 bytes
-    webSocket.add(chunk.sublist(3));
+    if (closed) return;
+    try {
+      //remove frame length: 3 bytes
+      webSocket.add(chunk.sublist(3));
+    } catch (_) {
+      // WebSocket already closed (e.g. cancel after disconnect).
+    }
   }
 }
 

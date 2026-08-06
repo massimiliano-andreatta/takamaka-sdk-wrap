@@ -5,6 +5,8 @@ class UploadStatusBean {
     this.status,
     this.uploadedChunk,
     this.error,
+    this.verified,
+    this.size,
   });
 
   final String? uploadContentIdentifyingHash;

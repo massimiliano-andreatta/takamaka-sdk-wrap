@@ -50,7 +50,7 @@ class TkmRsChatClient {
     final socket = await RSocketConnector.create()
         .dataMimeType('application/json')
         .metadataMimeType('message/x.rsocket.composite-metadata.v0')
-        .keepAlive(20, 90)
+        .keepAlive(20, 180)
         .connect(wsUrl)
         .timeout(connectTimeout);
     if (socket is! RSocketRequester) {

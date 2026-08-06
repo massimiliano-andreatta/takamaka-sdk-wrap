@@ -15,5 +15,12 @@ abstract final class ChatServerEndpoints {
   static const String retrieveAttachment = 'retrieveattachment';
   static const String registerFcmToken = 'registerfcmtoken';
   static const String unregisterFcmToken = 'unregisterfcmtoken';
+
+  /// Physical delete of this device's FCM row (identity switch / logout).
+  static const String deleteFcmToken = 'deletefcmtoken';
+
+  /// Physical delete of every FCM row for the signing identity.
+  static const String deleteAllFcmTokens = 'deleteallfcmtokens';
+
   static const String timeUpdatesStream = 'my.time-updates.stream';
 }

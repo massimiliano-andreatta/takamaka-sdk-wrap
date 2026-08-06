@@ -20,6 +20,8 @@ void main() {
       ChatServerEndpoints.retrieveAttachment,
       ChatServerEndpoints.registerFcmToken,
       ChatServerEndpoints.unregisterFcmToken,
+      ChatServerEndpoints.deleteFcmToken,
+      ChatServerEndpoints.deleteAllFcmTokens,
       ChatServerEndpoints.timeUpdatesStream,
     ];
 
@@ -43,5 +45,10 @@ void main() {
     expect(ChatServerEndpoints.createConversation, 'createconversation');
     expect(ChatServerEndpoints.messages, 'messages');
     expect(ChatServerEndpoints.retrieveMessages, 'retrievemessages');
+  });
+
+  test('FCM delete routes match fcm_token_delete_api guide', () {
+    expect(ChatServerEndpoints.deleteFcmToken, 'deletefcmtoken');
+    expect(ChatServerEndpoints.deleteAllFcmTokens, 'deleteallfcmtokens');
   });
 }
