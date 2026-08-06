@@ -838,6 +838,35 @@ abstract final class TkmChatCrypto {
     );
   }
 
+  /// FCM token register/unregister signed envelope.
+  ///
+  /// [deviceId] must be present in the signed content even when null — the
+  /// server canonicalises Lombok beans with explicit `"device_id":null`.
+  static Future<Map<String, dynamic>> buildFcmTokenRegistrationRequest({
+    required ChatKeyMaterial keys,
+    required Map<String, dynamic> nonceResponse,
+    required String fcmToken,
+    required String platform,
+    String? deviceId,
+  }) async {
+    final content = <String, dynamic>{
+      'nonce': nonceResponse,
+      'fcm_token': fcmToken,
+      'platform': platform,
+      'device_id': deviceId,
+    };
+    final signature =
+        await TkmChatSigning.signCanonicalJson(keys.signKeyPair, content);
+    final from = await TkmChatSigning.publicKeyUrl64(keys.signKeyPair);
+    return TkmChatSigning.signedEnvelope(
+      from: from,
+      signature: signature,
+      messageType: ChatMessageTypes.fcmTokenRegistration,
+      signedContentKey: 'fcm_token_registration_signed_content',
+      signedContentField: content,
+    );
+  }
+
   static String decryptSymmetricInvite({
     required ChatKeyMaterial keys,
     required Map<String, dynamic> invite,

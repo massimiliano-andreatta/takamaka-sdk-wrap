@@ -6,6 +6,7 @@ import 'package:takamaka_sdk_wrap/crypto/tkm_chat_signing.dart';
 import 'package:takamaka_sdk_wrap/crypto/tkm_chat_stream_encryption.dart';
 import 'package:takamaka_sdk_wrap/models/chat/chat_key_material.dart';
 import 'package:takamaka_sdk_wrap/models/chat/stream_encrypted_descriptor.dart';
+import 'package:takamaka_sdk_wrap/utils/tkm_base64_url.dart';
 import 'package:takamaka_sdk_wrap/utils/tkm_canonical_json.dart';
 
 /// Inline attachment threshold (~48 KB plaintext, safe under message blob limit).

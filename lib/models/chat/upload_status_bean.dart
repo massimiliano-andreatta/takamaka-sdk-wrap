@@ -12,13 +12,20 @@ class UploadStatusBean {
   final int? uploadedChunk;
   final String? error;
 
+  /// Java-style completion flag (CLIENT_API_GUIDE: last emit with verified=true).
+  final bool? verified;
+  final int? size;
+
   factory UploadStatusBean.fromJson(Map<String, dynamic> json) {
     return UploadStatusBean(
       uploadContentIdentifyingHash:
-          json['upload_content_id_hash'] as String?,
+          json['upload_content_id_hash'] as String? ??
+              json['signature'] as String?,
       status: json['status'] as String?,
       uploadedChunk: (json['uploaded_chunk'] as num?)?.toInt(),
       error: json['error'] as String?,
+      verified: json['verified'] as bool?,
+      size: (json['size'] as num?)?.toInt(),
     );
   }
 
@@ -30,5 +37,9 @@ class UploadStatusBean {
       status == 'CONTENT_NOT_FOUND' ||
       (error != null && error!.isNotEmpty);
 
-  bool get isComplete => status == 'READY_FOR_DOWNLOAD';
+  /// Server may emit either Flutter-style status strings or Java `verified`.
+  bool get isComplete =>
+      verified == true ||
+      status == 'READY_FOR_DOWNLOAD' ||
+      status == 'COMPLETE';
 }

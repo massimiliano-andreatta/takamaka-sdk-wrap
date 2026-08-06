@@ -51,7 +51,12 @@ class TcpDuplexConnection extends DuplexConnection {
 
   @override
   void write(Uint8List chunk) {
-    socket.add(chunk);
+    if (closed) return;
+    try {
+      socket.add(chunk);
+    } catch (_) {
+      // Socket already closed during teardown / stream cancel.
+    }
   }
 }
 

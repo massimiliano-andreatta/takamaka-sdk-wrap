@@ -666,34 +666,136 @@ class TkmChatClientApi {
     );
   }
 
+  /// Creates or updates this device token for the signing identity.
+  ///
+  /// Always pass a **fresh** [nonce] from [getNonce] — nonces are single-use
+  /// on all FCM routes (`docs/guide/fcm_token_delete_api.it.pdf` §4).
   Future<Map<String, dynamic>> registerFcmToken({
     required ChatKeyMaterial keys,
     required Map<String, dynamic> nonce,
     required String fcmToken,
     required String platform,
     String? deviceId,
-  }) async {
-    final content = {
-      'nonce': nonce,
-      'fcm_token': fcmToken,
-      'platform': platform,
-      if (deviceId != null) 'device_id': deviceId,
-    };
-    final signature =
-        await TkmChatSigning.signCanonicalJson(keys.signKeyPair, content);
-    final from = await TkmChatSigning.publicKeyUrl64(keys.signKeyPair);
-    final request = {
-      'from': from,
-      'signature': signature,
-      'message_type': 'FCM_TOKEN_REGISTRATION',
-      'signature_type': TkmChatSigning.signatureType,
-      'fcm_token_registration_signed_content': content,
-    };
-    final response = await _requestResponse(
-      ChatServerEndpoints.registerFcmToken,
-      request,
+  }) {
+    return _fcmTokenRoute(
+      route: ChatServerEndpoints.registerFcmToken,
+      keys: keys,
+      nonce: nonce,
+      fcmToken: fcmToken,
+      platform: platform,
+      deviceId: deviceId,
     );
-    return response ?? {};
+  }
+
+  /// Soft-deletes this device token (`is_active = false`, row kept ~30 days).
+  ///
+  /// Prefer [deleteFcmToken] on identity switch / logout — soft-delete leaves
+  /// the PK occupied and blocks the next [registerFcmToken] (same PDF §1).
+  Future<Map<String, dynamic>> unregisterFcmToken({
+    required ChatKeyMaterial keys,
+    required Map<String, dynamic> nonce,
+    required String fcmToken,
+    required String platform,
+    String? deviceId,
+  }) {
+    return _fcmTokenRoute(
+      route: ChatServerEndpoints.unregisterFcmToken,
+      keys: keys,
+      nonce: nonce,
+      fcmToken: fcmToken,
+      platform: platform,
+      deviceId: deviceId,
+    );
+  }
+
+  /// Physically deletes this device's FCM row for the signing identity.
+  ///
+  /// Use on identity switch and logout, **before** discarding [keys].
+  /// Idempotent: missing rows return `success` with `deleted_count: 0`.
+  Future<Map<String, dynamic>> deleteFcmToken({
+    required ChatKeyMaterial keys,
+    required Map<String, dynamic> nonce,
+    required String fcmToken,
+    required String platform,
+    String? deviceId,
+  }) {
+    return _fcmTokenRoute(
+      route: ChatServerEndpoints.deleteFcmToken,
+      keys: keys,
+      nonce: nonce,
+      fcmToken: fcmToken,
+      platform: platform,
+      deviceId: deviceId,
+    );
+  }
+
+  /// Physically deletes every FCM row for the signing identity (all devices).
+  ///
+  /// [fcmToken] is ignored by the server and may be empty.
+  Future<Map<String, dynamic>> deleteAllFcmTokens({
+    required ChatKeyMaterial keys,
+    required Map<String, dynamic> nonce,
+    String fcmToken = '',
+    String platform = 'android',
+    String? deviceId,
+  }) {
+    return _fcmTokenRoute(
+      route: ChatServerEndpoints.deleteAllFcmTokens,
+      keys: keys,
+      nonce: nonce,
+      fcmToken: fcmToken,
+      platform: platform,
+      deviceId: deviceId,
+    );
+  }
+
+  Future<Map<String, dynamic>> _fcmTokenRoute({
+    required String route,
+    required ChatKeyMaterial keys,
+    required Map<String, dynamic> nonce,
+    required String fcmToken,
+    required String platform,
+    String? deviceId,
+  }) async {
+    final request = await TkmChatCrypto.buildFcmTokenRegistrationRequest(
+      keys: keys,
+      nonceResponse: nonce,
+      fcmToken: fcmToken,
+      platform: platform,
+      deviceId: deviceId,
+    );
+    final content = request['fcm_token_registration_signed_content']
+        as Map<String, dynamic>?;
+    debugPrint(
+      'chat[rschat] $route REQUEST '
+      'message_type=${request['message_type']} '
+      'from=${request['from']} '
+      'platform=${content?['platform']} '
+      'device_id=${content?['device_id']} '
+      'fcm_token=$fcmToken '
+      'nonce=${content?['nonce']}',
+    );
+    try {
+      final response = await _requestResponse(route, request);
+      final map = response ?? {};
+      debugPrint(
+        'chat[rschat] $route RESPONSE '
+        'success=${map['success']} '
+        'error_code=${map['error_code']} '
+        'message=${map['message']} '
+        'deleted_count=${map['deleted_count']} '
+        'registration_time=${map['registration_time']} '
+        'body=$map',
+      );
+      return map;
+    } catch (e, st) {
+      debugPrint(
+        'chat[rschat] $route ERROR '
+        'fcm_token=$fcmToken platform=$platform error=$e',
+      );
+      debugPrint('chat[rschat] $route stack: $st');
+      rethrow;
+    }
   }
 
   Future<void> disconnect() => _client.disconnect();
