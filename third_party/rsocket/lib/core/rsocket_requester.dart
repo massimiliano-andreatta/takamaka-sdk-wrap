@@ -194,7 +194,11 @@ class RSocketRequester extends RSocket {
       connection.write(FrameCodec.encodeRequestStreamFrame(
           streamId, MAX_REQUEST_N_SIZE, payload!));
       var streamSubscriber = StreamSubscriber(onCancel: () {
-        connection.write(FrameCodec.encodeCancelFrame(streamId));
+        try {
+          connection.write(FrameCodec.encodeCancelFrame(streamId));
+        } catch (_) {
+          // Transport may already be closed (identity switch / disconnect).
+        }
         senders.remove(streamId);
       });
       senders[streamId] = streamSubscriber;
@@ -212,7 +216,11 @@ class RSocketRequester extends RSocket {
         connection: connection,
         streamId: streamId,
         onCancel: () {
-          connection.write(FrameCodec.encodeCancelFrame(streamId));
+          try {
+            connection.write(FrameCodec.encodeCancelFrame(streamId));
+          } catch (_) {
+            // Transport may already be closed (identity switch / disconnect).
+          }
           senders.remove(streamId);
         },
       );

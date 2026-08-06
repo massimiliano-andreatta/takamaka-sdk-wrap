@@ -1,13 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
-import 'package:takamaka_sdk_wrap/constants/chat_message_types.dart';
 import 'package:takamaka_sdk_wrap/constants/chat_server_endpoints.dart';
 import 'package:takamaka_sdk_wrap/crypto/tkm_chat_attachment.dart';
 import 'package:takamaka_sdk_wrap/crypto/tkm_chat_crypto.dart';
-import 'package:takamaka_sdk_wrap/crypto/tkm_chat_signing.dart';
 import 'package:takamaka_sdk_wrap/enums/tkm_chat_enums_api.dart';
 import 'package:takamaka_sdk_wrap/models/chat/chat_key_material.dart';
 import 'package:takamaka_sdk_wrap/models/chat/stream_encrypted_descriptor.dart';

@@ -28,6 +28,27 @@ void main() {
       expect(decrypted, plaintext);
     });
 
+    test('encryptAsync/decrypt round-trip', () async {
+      const password = 'symmetric-key-test';
+      const scope = 'conversation-hash-test';
+      final plaintext = Uint8List.fromList(utf8.encode('attachment payload async'));
+
+      final encrypted = await TkmChatStreamEncryption.encryptAsync(
+        password: password,
+        scope: scope,
+        plaintext: plaintext,
+      );
+
+      final decrypted = TkmChatStreamEncryption.decrypt(
+        password: password,
+        descriptor: encrypted.descriptor,
+        encryptedData: encrypted.encryptedData,
+        expectedPlaintextHashHex: encrypted.plaintextHashHex,
+      );
+
+      expect(decrypted, plaintext);
+    });
+
     test('descriptor round-trip json', () {
       final descriptor = StreamEncryptedDescriptor.standard(
         salt: 'aa' * 64,
