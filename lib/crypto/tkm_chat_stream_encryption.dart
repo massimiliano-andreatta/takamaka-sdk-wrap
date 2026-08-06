@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart' show compute;
 import 'package:pointycastle/export.dart';
 import 'package:takamaka_sdk_wrap/models/chat/stream_encrypted_descriptor.dart';
 import 'package:takamaka_sdk_wrap/utils/tkm_base64_url.dart';
@@ -64,6 +65,22 @@ class TkmChatStreamEncryption {
       plaintextHashHex: plaintextHashHex,
       descriptor: descriptor,
       encryptedData: base64Encoded,
+    );
+  }
+
+  /// Runs [encrypt] off the UI isolate (parity with rsclient `encryptAsync`).
+  static Future<StreamEncryptionResult> encryptAsync({
+    required String password,
+    required String scope,
+    required Uint8List plaintext,
+  }) {
+    return compute(
+      _encryptInIsolate,
+      _EncryptIsolateParams(
+        password: password,
+        scope: scope,
+        plaintext: plaintext,
+      ),
     );
   }
 
@@ -130,6 +147,11 @@ class TkmChatStreamEncryption {
     return TkmBase64Url.encode(Uint8List.fromList(digest.process(data)));
   }
 
+  /// SHA3 hash off the UI isolate for large attachments.
+  static Future<String> computePlaintextHashUrl64Async(Uint8List data) {
+    return compute(_hashUrl64InIsolate, data);
+  }
+
   static String _generateRandomSaltWithScope(String scope) {
     const chars =
         'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -180,6 +202,30 @@ class TkmChatStreamEncryption {
     );
     return key;
   }
+}
+
+class _EncryptIsolateParams {
+  const _EncryptIsolateParams({
+    required this.password,
+    required this.scope,
+    required this.plaintext,
+  });
+
+  final String password;
+  final String scope;
+  final Uint8List plaintext;
+}
+
+StreamEncryptionResult _encryptInIsolate(_EncryptIsolateParams params) {
+  return TkmChatStreamEncryption.encrypt(
+    password: params.password,
+    scope: params.scope,
+    plaintext: params.plaintext,
+  );
+}
+
+String _hashUrl64InIsolate(Uint8List data) {
+  return TkmChatStreamEncryption.computePlaintextHashUrl64(data);
 }
 
 class StreamEncryptionResult {

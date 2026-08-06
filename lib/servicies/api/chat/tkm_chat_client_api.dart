@@ -359,6 +359,10 @@ class TkmChatClientApi {
   }
 
   /// Uploads encrypted attachment bytes via RSocket request-channel.
+  ///
+  /// [onUploadProgress] reflects **server ACK** progress only (not local queue
+  /// emission). Values stay in `0..0.99` — callers should reserve `1.0` for
+  /// post-upload work (cache / send message) completion.
   Future<UploadStatusBean> submitAttachmentStreaming({
     required ChatKeyMaterial keys,
     required String conversationHash,
@@ -373,6 +377,16 @@ class TkmChatClientApi {
     );
     final signedRequestJson = jsonEncode(signedRequest);
     final controller = StreamController<Uint8List>();
+    final totalBytes = encrypted.encryptedData.length;
+    var bestProgress = 0.0;
+
+    void reportProgress(double value) {
+      final clamped = value.clamp(0.0, 0.99);
+      if (clamped < bestProgress) return;
+      bestProgress = clamped;
+      onUploadProgress?.call(bestProgress);
+    }
+
     unawaited(_emitUploadChunks(
       controller,
       encrypted.encryptedData,
@@ -380,30 +394,43 @@ class TkmChatClientApi {
     ));
 
     UploadStatusBean? lastStatus;
-    final totalBytes = encrypted.encryptedData.length;
     try {
-      await for (final statusJson in _client
+      // Idle timeout between status ACKs (resets on each event); overall cap 5 min.
+      final responseStream = _client
           .requestChannelForUploadJson(
             ChatServerEndpoints.submitAttachment,
             controller.stream,
             signedRequestJson,
           )
-          .timeout(const Duration(minutes: 5))) {
+          .timeout(
+            const Duration(seconds: 90),
+            onTimeout: (EventSink<Map<String, dynamic>> sink) {
+              sink.addError(
+                StateError('Attachment upload stalled (no server ACK)'),
+              );
+            },
+          )
+          .timeout(const Duration(minutes: 5));
+
+      await for (final statusJson in responseStream) {
         final status = UploadStatusBean.fromJson(statusJson);
         lastStatus = status;
-        if (onUploadProgress != null && totalBytes > 0) {
-          final uploadedChunk = status.uploadedChunk ?? 0;
-          var uploadedBytes = uploadedChunk * chunkSize;
-          if (uploadedBytes > totalBytes) uploadedBytes = totalBytes;
-          if (status.isComplete) {
-            onUploadProgress(1.0);
-          } else {
-            onUploadProgress(uploadedBytes / totalBytes);
-          }
-        }
         if (status.isError) {
           throw StateError('Upload failed: ${status.error ?? status.status}');
         }
+
+        if (totalBytes > 0) {
+          final uploadedChunk = status.uploadedChunk ?? 0;
+          // rsclient: bytesUploaded = uploaded_chunk * chunkSize
+          var uploadedBytes = uploadedChunk * chunkSize;
+          if (uploadedBytes > totalBytes) uploadedBytes = totalBytes;
+          if (status.isComplete) {
+            reportProgress(0.99);
+          } else if (uploadedBytes > 0) {
+            reportProgress(uploadedBytes / totalBytes);
+          }
+        }
+
         if (status.isComplete) break;
       }
     } on TimeoutException {
@@ -423,8 +450,21 @@ class TkmChatClientApi {
         );
       }
       rethrow;
+    } finally {
+      if (!controller.isClosed) {
+        await controller.close();
+      }
     }
-    return lastStatus ?? const UploadStatusBean(status: 'UNKNOWN');
+
+    final result = lastStatus;
+    if (result == null || !result.isComplete) {
+      throw StateError(
+        'Attachment upload incomplete: status=${result?.status ?? "none"} '
+        'verified=${result?.verified}',
+      );
+    }
+    reportProgress(0.99);
+    return result;
   }
 
   /// Downloads encrypted bytes and decrypts with conversation symmetric key + SED.
@@ -460,17 +500,19 @@ class TkmChatClientApi {
     try {
       var offset = 0;
       while (offset < data.length) {
+        if (controller.isClosed) return;
         final end = (offset + chunkSize).clamp(0, data.length);
         controller.add(Uint8List.fromList(data.sublist(offset, end)));
         offset = end;
+        // Yield so REQUEST_N / inbound frames can be processed (avoid RS-515).
         await Future<void>.delayed(Duration.zero);
       }
       await controller.close();
     } catch (e) {
       if (!controller.isClosed) {
-        controller.addError(e);
         await controller.close();
       }
+      rethrow;
     }
   }
 

@@ -20,6 +20,10 @@ abstract final class TkmChatAttachment {
     return TkmChatStreamEncryption.computePlaintextHashUrl64(data);
   }
 
+  static Future<String> computePlaintextHashUrl64Async(Uint8List data) {
+    return TkmChatStreamEncryption.computePlaintextHashUrl64Async(data);
+  }
+
   static EncryptedAttachmentResult encryptForUpload({
     required String symmetricKey,
     required String conversationHash,
@@ -33,9 +37,36 @@ abstract final class TkmChatAttachment {
     return EncryptedAttachmentResult(
       encryptedData: result.encryptedData,
       plaintextHashHex: result.plaintextHashHex,
-      plaintextHashUrl64: computePlaintextHashUrl64(plaintext),
+      plaintextHashUrl64: _url64FromHexHash(result.plaintextHashHex),
       descriptor: result.descriptor,
     );
+  }
+
+  /// Non-blocking encrypt (rsclient `encryptForUploadAsync`) for large files.
+  static Future<EncryptedAttachmentResult> encryptForUploadAsync({
+    required String symmetricKey,
+    required String conversationHash,
+    required Uint8List plaintext,
+  }) async {
+    final result = await TkmChatStreamEncryption.encryptAsync(
+      password: symmetricKey,
+      scope: conversationHash,
+      plaintext: plaintext,
+    );
+    return EncryptedAttachmentResult(
+      encryptedData: result.encryptedData,
+      plaintextHashHex: result.plaintextHashHex,
+      plaintextHashUrl64: _url64FromHexHash(result.plaintextHashHex),
+      descriptor: result.descriptor,
+    );
+  }
+
+  static String _url64FromHexHash(String hex) {
+    final bytes = Uint8List(hex.length ~/ 2);
+    for (var i = 0; i < hex.length; i += 2) {
+      bytes[i ~/ 2] = int.parse(hex.substring(i, i + 2), radix: 16);
+    }
+    return TkmBase64Url.encode(bytes);
   }
 
   static Uint8List decryptDownload({
