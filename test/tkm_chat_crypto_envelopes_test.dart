@@ -93,8 +93,8 @@ void main() {
         expectedMessageType: ChatMessageTypes.topicMessage,
       );
 
-      final content = request['basic_message_signed_content_bean']
-          as Map<String, dynamic>;
+      final content =
+          request['basic_message_signed_content_bean'] as Map<String, dynamic>;
       expect(content['conversation_hash_name'], conversationHash);
       expect(content['encrypted_content'], isA<Map<String, dynamic>>());
     });
@@ -185,7 +185,8 @@ void main() {
       expect(action.targets, [parentSignature]);
     });
 
-    test('reaction message — SHA3-256 hash over preview base64 string', () async {
+    test('reaction message — SHA3-256 hash over preview base64 string',
+        () async {
       const conversationHash = 'conv-hash-guide-test';
       const symKey = 'symmetric-key-password-for-aes-scope-test-0123456789';
       const parentSignature =
@@ -279,27 +280,29 @@ void main() {
       expect(action.targets, [parentSignature]);
     });
 
-    test('typing message — action typing in inner plaintext', () async {
-      const conversationHash = 'conv-hash-guide-test';
-      const symKey = 'symmetric-key-password-for-aes-scope-test-0123456789';
-      final request = await TkmChatCrypto.buildTypingMessageRequest(
+    test('typing subscribe — TYPING_SUBSCRIBE signed pl', () async {
+      final request = await TkmChatCrypto.buildTypingSubscribeRequest(
         keys: keys,
-        conversationHash: conversationHash,
-        symmetricKey: symKey,
+        clientTimestamp: 1706000000000,
       );
 
       await expectValidSignedEnvelope(
         envelope: request,
-        signedContentKey: 'basic_message_signed_content_bean',
-        expectedMessageType: ChatMessageTypes.topicMessage,
+        signedContentKey: 'pl',
+        expectedMessageType: ChatMessageTypes.typingSubscribe,
       );
 
-      final decrypted = TkmChatCrypto.decryptContentFromMessageEnvelope(
-        envelope: request,
-        symmetricKey: symKey,
+      final pl = request['pl'] as Map<String, dynamic>;
+      expect(pl['pv'], TkmChatCrypto.signalProtocolVersion);
+      expect(pl['ts'], 1706000000000);
+      expect(pl.containsKey('from'), isFalse);
+
+      final emit = TkmChatCrypto.buildTypingEmitPayload(
+        conversationHash: 'conv-hash-guide-test',
       );
-      final action = TkmChatCrypto.parseMessageActionFields(decrypted!);
-      expect(action.action, 'typing');
+      expect(emit['conv'], 'conv-hash-guide-test');
+      expect(emit['pv'], TkmChatCrypto.signalProtocolVersion);
+      expect(emit.containsKey('from'), isFalse);
     });
 
     test('pin message — action pin + target in inner plaintext', () async {
@@ -442,7 +445,8 @@ void main() {
 
       final topic = request['topic'] as Map<String, dynamic>;
       final invitations = (topic['topic_members_map']
-          as Map<String, dynamic>)['topic_invitation_list'] as Map<String, dynamic>;
+              as Map<String, dynamic>)['topic_invitation_list']
+          as Map<String, dynamic>;
       final invite = invitations.values.first as Map<String, dynamic>;
 
       final decrypted = TkmChatCrypto.decryptSymmetricInvite(
@@ -488,7 +492,8 @@ void main() {
   });
 
   group('stream event parsing helpers', () {
-    test('topicFromRetrieveConversationResponse — nested create_conversation_request',
+    test(
+        'topicFromRetrieveConversationResponse — nested create_conversation_request',
         () {
       const topic = {
         'topic_members_map': {

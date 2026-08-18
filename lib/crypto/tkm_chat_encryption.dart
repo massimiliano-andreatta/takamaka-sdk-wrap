@@ -5,7 +5,7 @@ import 'dart:math';
 import 'package:crypto/crypto.dart' as crypto;
 import 'package:flutter/foundation.dart';
 import 'package:pointycastle/export.dart';
-import 'package:pointycastle/digests/sha3.dart';
+import 'package:takamaka_sdk_wrap/constants/chat_message_types.dart';
 import 'package:takamaka_sdk_wrap/crypto/tkm_pbkdf2.dart';
 import 'package:takamaka_sdk_wrap/utils/tkm_base64_url.dart';
 import 'package:takamaka_sdk_wrap/utils/tkm_canonical_json.dart';
@@ -18,6 +18,11 @@ abstract final class TkmChatEncryption {
   static const int _iterations = 20000;
   static const String _scopeTopicCreation = 'TOPIC_CREATION';
   static const String _scopeTopicMessage = 'TOPIC_MESSAGE';
+  static const List<String> _defaultPrewarmScopes = [
+    _scopeTopicCreation,
+    _scopeTopicMessage,
+    ChatMessageTypes.readReceipt,
+  ];
 
   static const String _wirePasswordAlgorithm = 'PBKDF2WithHmacSHA512';
   static const String _wireKeyAlgorithm = 'AES';
@@ -74,18 +79,22 @@ abstract final class TkmChatEncryption {
     }
   }
 
-  /// Derives the conversation AES keys (both scopes) in a background isolate
-  /// and seeds the in-memory cache, so later encrypt/decrypt calls on the UI
-  /// isolate are cheap. Safe to call repeatedly (deduped / cache-aware).
+  /// Derives conversation AES keys in a background isolate and seeds the
+  /// in-memory cache, so later encrypt/decrypt calls on the UI isolate are
+  /// AES-only. Safe to call repeatedly (deduped / cache-aware).
+  ///
+  /// Defaults cover message, topic-title, and read-receipt scopes. Pass
+  /// [scopes] to prewarm a subset (e.g. a single decrypt).
   static Future<void> prewarmConversationKey(
     String symmetricKey, {
+    List<String>? scopes,
     int iterations = _iterations,
     int keyLengthBits = 256,
   }) async {
     if (symmetricKey.isEmpty) return;
-    const scopes = [_scopeTopicCreation, _scopeTopicMessage];
+    final wanted = scopes ?? _defaultPrewarmScopes;
     final missing = <String>[];
-    for (final scope in scopes) {
+    for (final scope in wanted) {
       final cacheKey = _derivedKeyCacheKey(
         password: symmetricKey,
         salt: scope,
@@ -98,7 +107,8 @@ abstract final class TkmChatEncryption {
     }
     if (missing.isEmpty) return;
 
-    final inFlightKey = '$iterations|$keyLengthBits|$symmetricKey';
+    final inFlightKey =
+        '$iterations|$keyLengthBits|$symmetricKey|${missing.join(',')}';
     final inFlight = _prewarmInFlight[inFlightKey];
     if (inFlight != null) return inFlight;
 
@@ -226,23 +236,56 @@ abstract final class TkmChatEncryption {
     };
   }
 
+  /// Encrypts a UTF-8 string (not canonical JSON) — delete-reason, receipts.
+  ///
+  /// [iv] pins the CBC IV (16 bytes) for deterministic test vectors. Production
+  /// callers omit it so a fresh random IV is used.
+  static Map<String, dynamic> encryptUtf8String({
+    required String password,
+    required String plaintext,
+    required String scope,
+    Uint8List? iv,
+  }) {
+    return _encryptUtf8Payload(
+      password: password,
+      plaintext: plaintext,
+      scope: scope,
+      iv: iv,
+    );
+  }
+
   /// RSChat v0_1_a: AES-CBC with PBKDF2 salt = [scope] (`TOPIC_MESSAGE`, …).
   static Map<String, dynamic> encryptWithPassword({
     required String password,
     required Object plaintextObject,
     required String scope,
   }) {
-    final plaintext = TkmCanonicalJson.encode(plaintextObject);
+    return _encryptUtf8Payload(
+      password: password,
+      plaintext: TkmCanonicalJson.encode(plaintextObject),
+      scope: scope,
+    );
+  }
+
+  static Map<String, dynamic> _encryptUtf8Payload({
+    required String password,
+    required String plaintext,
+    required String scope,
+    Uint8List? iv,
+  }) {
     final key = _deriveScopeKeyCached(
       password: password,
       salt: scope,
       iterations: _iterations,
       keyLengthBits: 256,
     );
-    final iv = _randomBytes(16);
+    final resolvedIv = iv ?? _randomBytes(16);
+    if (resolvedIv.length != 16) {
+      throw ArgumentError.value(iv, 'iv', 'AES-CBC IV must be 16 bytes');
+    }
     final padded = _pkcs7Pad(Uint8List.fromList(utf8.encode(plaintext)), 16);
     final cipher = CBCBlockCipher(AESEngine())
-      ..init(true, ParametersWithIV(KeyParameter(key), iv));
+      ..init(true, ParametersWithIV(KeyParameter(key), resolvedIv));
     final cipherBytes = Uint8List(padded.length);
     var offset = 0;
     while (offset < padded.length) {
@@ -251,7 +294,7 @@ abstract final class TkmChatEncryption {
 
     return {
       'encrypted_message': [
-        TkmBase64Url.encode(iv),
+        TkmBase64Url.encode(resolvedIv),
         TkmBase64Url.encode(cipherBytes),
       ],
       'password_algorithm': _wirePasswordAlgorithm,
@@ -291,6 +334,26 @@ abstract final class TkmChatEncryption {
       password: password,
       internal: internal,
       chunks: chunks,
+    );
+  }
+
+  /// Decrypts after ensuring the PBKDF2 key is cached (derived off-isolate).
+  ///
+  /// Per-message `compute()` is avoided: history pages would spawn one isolate
+  /// per envelope. After [prewarmConversationKey] the remaining work is AES.
+  static Future<String> decryptWithPasswordAsync({
+    required String password,
+    required Map<String, dynamic> encMessage,
+    required String scope,
+  }) async {
+    await prewarmConversationKey(
+      password,
+      scopes: [scope],
+    );
+    return decryptWithPassword(
+      password: password,
+      encMessage: encMessage,
+      scope: scope,
     );
   }
 
@@ -400,6 +463,22 @@ abstract final class TkmChatEncryption {
     return jsonDecode(json) as Map<String, dynamic>;
   }
 
+  /// Background-isolate variant of [decryptMessageContent].
+  static Future<Map<String, dynamic>> decryptMessageContentAsync(
+    Map<String, dynamic> encMessage,
+    String symmetricKey,
+  ) async {
+    final json = await decryptWithPasswordAsync(
+      password: symmetricKey,
+      encMessage: encMessage,
+      scope: _scopeTopicMessage,
+    );
+    return jsonDecode(json) as Map<String, dynamic>;
+  }
+
+  /// Legacy EncMessage path (salt+IV prepended to ciphertext). Uses HMAC block
+  /// size 64, unlike [TkmPbkdf2] (128) used by v0_1_a scope-salt keys. Do not
+  /// mix the two derivators.
   static Uint8List _deriveKeyLegacy(
     String password,
     Uint8List salt, {

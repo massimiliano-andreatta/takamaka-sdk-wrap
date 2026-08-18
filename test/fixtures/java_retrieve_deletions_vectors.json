@@ -1,0 +1,92 @@
+{
+  "version" : "1.0.0",
+  "generated_by" : "RetrieveDeletionsParityVectorTest.java",
+  "source" : "rsclient + Messages (Java reference)",
+  "decision" : "DR-025 deletion-log catch-up",
+  "retrieve_deletions_constants" : {
+    "endpoint" : "retrievedeletions",
+    "message_type" : "RETRIEVE_DELETIONS",
+    "signature_type" : "Ed25519BC",
+    "pl_key_order_jcs" : [ "client_ts", "conversation_hash_name", "since" ],
+    "envelope_keys" : [ "from", "message_type", "pl", "signature", "signature_type" ],
+    "log_entry_keys" : [ "conversation_hash_name", "server_delete_time", "signed_delete_envelope", "target_message_signature" ]
+  },
+  "signer_identity" : {
+    "mnemonic" : "sample half mammal radar hold fit era dilemma manage movie razor saddle point dial sadness north item naive gate hockey sample script embark purse myth",
+    "key_index" : 4,
+    "signer_public_key" : "el3xvxJnLv9S9aWD0ei3g96YGOAvdYW_yn5z1eIvCDc."
+  },
+  "request_vectors" : [ {
+    "desc" : "with_cursor",
+    "note" : "incremental catch-up: replay only deletions newer than the stored cursor",
+    "input" : {
+      "conversation_hash_name" : "a1b2c3d4e5f6789012345678901234567890123456789012345678901234abcd",
+      "since" : 1785331326960,
+      "client_ts" : 1767225600000
+    },
+    "pl_canonical_jcs" : "{\"client_ts\":1767225600000,\"conversation_hash_name\":\"a1b2c3d4e5f6789012345678901234567890123456789012345678901234abcd\",\"since\":1785331326960}",
+    "signature_b64url" : "IdWlKEm1ZdUxy6o7z3qRoWvtxNAXNQEL1yPQIDLWxNUliJGzx14Ph5DJUHgzf-wvJb1Tj1GnR-QGyh9HsPlEAA..",
+    "envelope_json" : {
+      "from" : "el3xvxJnLv9S9aWD0ei3g96YGOAvdYW_yn5z1eIvCDc.",
+      "signature" : "IdWlKEm1ZdUxy6o7z3qRoWvtxNAXNQEL1yPQIDLWxNUliJGzx14Ph5DJUHgzf-wvJb1Tj1GnR-QGyh9HsPlEAA..",
+      "message_type" : "RETRIEVE_DELETIONS",
+      "signature_type" : "Ed25519BC",
+      "pl" : {
+        "conversation_hash_name" : "a1b2c3d4e5f6789012345678901234567890123456789012345678901234abcd",
+        "since" : 1785331326960,
+        "client_ts" : 1767225600000
+      }
+    }
+  }, {
+    "desc" : "cursor_absent",
+    "note" : "first catch-up: NON_EMPTY drops a null 'since', so it is absent from canonical(pl)",
+    "input" : {
+      "conversation_hash_name" : "a1b2c3d4e5f6789012345678901234567890123456789012345678901234abcd",
+      "since" : null,
+      "client_ts" : 1767225600000
+    },
+    "pl_canonical_jcs" : "{\"client_ts\":1767225600000,\"conversation_hash_name\":\"a1b2c3d4e5f6789012345678901234567890123456789012345678901234abcd\"}",
+    "signature_b64url" : "UtEXotivVrtDtpBXdZgh-fp4y-v-yoVaIAfhcutdq0XwmbYUr5JzQTN0HUsSyyOyPL367i8bdoZrqsuM-3Y9CQ..",
+    "envelope_json" : {
+      "from" : "el3xvxJnLv9S9aWD0ei3g96YGOAvdYW_yn5z1eIvCDc.",
+      "signature" : "UtEXotivVrtDtpBXdZgh-fp4y-v-yoVaIAfhcutdq0XwmbYUr5JzQTN0HUsSyyOyPL367i8bdoZrqsuM-3Y9CQ..",
+      "message_type" : "RETRIEVE_DELETIONS",
+      "signature_type" : "Ed25519BC",
+      "pl" : {
+        "conversation_hash_name" : "a1b2c3d4e5f6789012345678901234567890123456789012345678901234abcd",
+        "client_ts" : 1767225600000
+      }
+    }
+  }, {
+    "desc" : "cursor_zero",
+    "note" : "PARITY TRAP: 0 is NOT empty — 'since':0 IS present, and signs differently from an absent cursor",
+    "input" : {
+      "conversation_hash_name" : "a1b2c3d4e5f6789012345678901234567890123456789012345678901234abcd",
+      "since" : 0,
+      "client_ts" : 1767225600000
+    },
+    "pl_canonical_jcs" : "{\"client_ts\":1767225600000,\"conversation_hash_name\":\"a1b2c3d4e5f6789012345678901234567890123456789012345678901234abcd\",\"since\":0}",
+    "signature_b64url" : "YM3O-eB8v8lJ1Z9_CSLJJP9P18Rdkhg6VRHu7RmTTzxm1nyiCB6Yn7-i2psiNWQk0BpHp2An_5kXYWNDadqECw..",
+    "envelope_json" : {
+      "from" : "el3xvxJnLv9S9aWD0ei3g96YGOAvdYW_yn5z1eIvCDc.",
+      "signature" : "YM3O-eB8v8lJ1Z9_CSLJJP9P18Rdkhg6VRHu7RmTTzxm1nyiCB6Yn7-i2psiNWQk0BpHp2An_5kXYWNDadqECw..",
+      "message_type" : "RETRIEVE_DELETIONS",
+      "signature_type" : "Ed25519BC",
+      "pl" : {
+        "conversation_hash_name" : "a1b2c3d4e5f6789012345678901234567890123456789012345678901234abcd",
+        "since" : 0,
+        "client_ts" : 1767225600000
+      }
+    }
+  } ],
+  "log_entry_vectors" : [ {
+    "desc" : "one deletion row as streamed by retrievedeletions",
+    "note" : "signed_delete_envelope is the ONLY authoritative field: re-verify it, do not trust the row",
+    "json" : {
+      "target_message_signature" : "targetMsgSigParity0001targetMsgSigParity0001targetMsgSigParity0001targetMsgSigParity0001",
+      "conversation_hash_name" : "a1b2c3d4e5f6789012345678901234567890123456789012345678901234abcd",
+      "server_delete_time" : 1785331326960,
+      "signed_delete_envelope" : "{\"from\":\"…\",\"signature\":\"…\",\"message_type\":\"DELETE_MESSAGE\"}"
+    }
+  } ]
+}

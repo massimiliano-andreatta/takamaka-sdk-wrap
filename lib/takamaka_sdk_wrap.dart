@@ -14,8 +14,14 @@ export 'crypto/tkm_chat_encryption.dart';
 export 'crypto/tkm_chat_signing.dart';
 export 'crypto/tkm_chat_stream_encryption.dart';
 export 'crypto/tkm_chat_attachment.dart';
+export 'crypto/tkm_chat_inbound_envelope.dart';
+export 'crypto/tkm_chat_delete_honor.dart';
+export 'crypto/tkm_chat_peer_read_cursor.dart';
+export 'constants/chat_message_types.dart';
+export 'crypto/tkm_chat_manifest_limits.dart';
 export 'models/chat/stream_encrypted_descriptor.dart';
 export 'models/chat/upload_status_bean.dart';
+export 'models/chat/tkm_delete_message_response.dart';
 export 'constants/chat_server_endpoints.dart';
 
 export 'tkm_utility.dart';

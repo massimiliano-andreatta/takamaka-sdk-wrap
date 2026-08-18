@@ -1,0 +1,202 @@
+{
+  "version" : "1.0.0",
+  "generated_by" : "DeleteMessageParityVectorTest.java",
+  "source" : "rsclient + Messages (Java reference)",
+  "decision" : "DR-025 delete for everyone",
+  "delete_message_constants" : {
+    "endpoint" : "deletemessage",
+    "message_type" : "DELETE_MESSAGE",
+    "signature_type" : "Ed25519BC",
+    "protocol_version_current" : "1.2",
+    "pl_key_order_jcs" : [ "client_ts", "conversation_hash_name", "reason", "target_efh", "target_message_signature" ],
+    "envelope_keys" : [ "from", "message_type", "pl", "signature", "signature_type" ],
+    "error_codes" : [ "rate_limited", "invalid_signature", "not_owner", "not_member", "window_expired", "not_found", "internal_error" ]
+  },
+  "signer_identity" : {
+    "mnemonic" : "sample half mammal radar hold fit era dilemma manage movie razor saddle point dial sadness north item naive gate hockey sample script embark purse myth",
+    "key_index" : 4,
+    "signer_public_key" : "el3xvxJnLv9S9aWD0ei3g96YGOAvdYW_yn5z1eIvCDc.",
+    "symmetric_conversation_key" : "parityConversationKeyForDeleteReason0000000="
+  },
+  "delete_vectors" : [ {
+    "desc" : "full_with_attachments_and_reason",
+    "note" : "owner deletes a message carrying two attachments, with an ENCRYPTED audit reason",
+    "input" : {
+      "conversation_hash_name" : "a1b2c3d4e5f6789012345678901234567890123456789012345678901234abcd",
+      "target_message_signature" : "targetMsgSigParity0001targetMsgSigParity0001targetMsgSigParity0001targetMsgSigParity0001",
+      "target_efh" : [ "efhParity000000000000000000000000000000000000000000000000000000a1", "efhParity000000000000000000000000000000000000000000000000000000b2" ],
+      "client_ts" : 1767225600000,
+      "reason" : {
+        "pa" : "PBKDF2WithHmacSHA512",
+        "it" : 20000,
+        "tr" : "AES/CBC/PKCS5Padding",
+        "ka" : "AES",
+        "tv" : "v0_1_a",
+        "kl" : 256,
+        "ec" : "UTF-8",
+        "em" : [ "i4GYWUPvNwvVtYAH4Jks3Q..", "xEjqx-gPGPEg2XKZDooccJ45dQnDIzxKMlwl3kxc_CU." ]
+      },
+      "reason_plaintext" : "sent to the wrong conversation"
+    },
+    "pl_canonical_jcs" : "{\"client_ts\":1767225600000,\"conversation_hash_name\":\"a1b2c3d4e5f6789012345678901234567890123456789012345678901234abcd\",\"reason\":{\"ec\":\"UTF-8\",\"em\":[\"i4GYWUPvNwvVtYAH4Jks3Q..\",\"xEjqx-gPGPEg2XKZDooccJ45dQnDIzxKMlwl3kxc_CU.\"],\"it\":20000,\"ka\":\"AES\",\"kl\":256,\"pa\":\"PBKDF2WithHmacSHA512\",\"tr\":\"AES/CBC/PKCS5Padding\",\"tv\":\"v0_1_a\"},\"target_efh\":[\"efhParity000000000000000000000000000000000000000000000000000000a1\",\"efhParity000000000000000000000000000000000000000000000000000000b2\"],\"target_message_signature\":\"targetMsgSigParity0001targetMsgSigParity0001targetMsgSigParity0001targetMsgSigParity0001\"}",
+    "signature_b64url" : "6yyyyhK4POqqPdpj9e92fKmOjqzZj2CRTqcL1jm64BXvM93E3VmQGSeBVA8R-6B1DuxQ0mmDbBJHjpkVXZS5Aw..",
+    "envelope_json" : {
+      "from" : "el3xvxJnLv9S9aWD0ei3g96YGOAvdYW_yn5z1eIvCDc.",
+      "signature" : "6yyyyhK4POqqPdpj9e92fKmOjqzZj2CRTqcL1jm64BXvM93E3VmQGSeBVA8R-6B1DuxQ0mmDbBJHjpkVXZS5Aw..",
+      "message_type" : "DELETE_MESSAGE",
+      "signature_type" : "Ed25519BC",
+      "pl" : {
+        "conversation_hash_name" : "a1b2c3d4e5f6789012345678901234567890123456789012345678901234abcd",
+        "target_message_signature" : "targetMsgSigParity0001targetMsgSigParity0001targetMsgSigParity0001targetMsgSigParity0001",
+        "target_efh" : [ "efhParity000000000000000000000000000000000000000000000000000000a1", "efhParity000000000000000000000000000000000000000000000000000000b2" ],
+        "client_ts" : 1767225600000,
+        "reason" : {
+          "pa" : "PBKDF2WithHmacSHA512",
+          "it" : 20000,
+          "tr" : "AES/CBC/PKCS5Padding",
+          "ka" : "AES",
+          "tv" : "v0_1_a",
+          "kl" : 256,
+          "ec" : "UTF-8",
+          "em" : [ "i4GYWUPvNwvVtYAH4Jks3Q..", "xEjqx-gPGPEg2XKZDooccJ45dQnDIzxKMlwl3kxc_CU." ]
+        }
+      }
+    }
+  }, {
+    "desc" : "minimal_null_efh_null_reason",
+    "note" : "text-only delete; NON_EMPTY drops target_efh and reason from the signed canonical form",
+    "input" : {
+      "conversation_hash_name" : "a1b2c3d4e5f6789012345678901234567890123456789012345678901234abcd",
+      "target_message_signature" : "targetMsgSigParity0001targetMsgSigParity0001targetMsgSigParity0001targetMsgSigParity0001",
+      "target_efh" : null,
+      "client_ts" : 1767225600000,
+      "reason" : null
+    },
+    "pl_canonical_jcs" : "{\"client_ts\":1767225600000,\"conversation_hash_name\":\"a1b2c3d4e5f6789012345678901234567890123456789012345678901234abcd\",\"target_message_signature\":\"targetMsgSigParity0001targetMsgSigParity0001targetMsgSigParity0001targetMsgSigParity0001\"}",
+    "signature_b64url" : "yPTIaxznPyvsSEONr1M7l_ootspB0m3rDB4Ld6V_RLeQThka6sMjIRppn6mkukEmOweZNmNSTYfL5H3iJ6NLBQ..",
+    "envelope_json" : {
+      "from" : "el3xvxJnLv9S9aWD0ei3g96YGOAvdYW_yn5z1eIvCDc.",
+      "signature" : "yPTIaxznPyvsSEONr1M7l_ootspB0m3rDB4Ld6V_RLeQThka6sMjIRppn6mkukEmOweZNmNSTYfL5H3iJ6NLBQ..",
+      "message_type" : "DELETE_MESSAGE",
+      "signature_type" : "Ed25519BC",
+      "pl" : {
+        "conversation_hash_name" : "a1b2c3d4e5f6789012345678901234567890123456789012345678901234abcd",
+        "target_message_signature" : "targetMsgSigParity0001targetMsgSigParity0001targetMsgSigParity0001targetMsgSigParity0001",
+        "client_ts" : 1767225600000
+      }
+    }
+  }, {
+    "desc" : "empty_efh_empty_reason",
+    "note" : "NON_EMPTY parity trap: an empty list and a blank reason (which encrypts to null) are omitted, so this signs identically to the minimal case",
+    "input" : {
+      "conversation_hash_name" : "a1b2c3d4e5f6789012345678901234567890123456789012345678901234abcd",
+      "target_message_signature" : "targetMsgSigParity0001targetMsgSigParity0001targetMsgSigParity0001targetMsgSigParity0001",
+      "target_efh" : [ ],
+      "client_ts" : 1767225600000,
+      "reason" : null
+    },
+    "pl_canonical_jcs" : "{\"client_ts\":1767225600000,\"conversation_hash_name\":\"a1b2c3d4e5f6789012345678901234567890123456789012345678901234abcd\",\"target_message_signature\":\"targetMsgSigParity0001targetMsgSigParity0001targetMsgSigParity0001targetMsgSigParity0001\"}",
+    "signature_b64url" : "yPTIaxznPyvsSEONr1M7l_ootspB0m3rDB4Ld6V_RLeQThka6sMjIRppn6mkukEmOweZNmNSTYfL5H3iJ6NLBQ..",
+    "envelope_json" : {
+      "from" : "el3xvxJnLv9S9aWD0ei3g96YGOAvdYW_yn5z1eIvCDc.",
+      "signature" : "yPTIaxznPyvsSEONr1M7l_ootspB0m3rDB4Ld6V_RLeQThka6sMjIRppn6mkukEmOweZNmNSTYfL5H3iJ6NLBQ..",
+      "message_type" : "DELETE_MESSAGE",
+      "signature_type" : "Ed25519BC",
+      "pl" : {
+        "conversation_hash_name" : "a1b2c3d4e5f6789012345678901234567890123456789012345678901234abcd",
+        "target_message_signature" : "targetMsgSigParity0001targetMsgSigParity0001targetMsgSigParity0001targetMsgSigParity0001",
+        "client_ts" : 1767225600000
+      }
+    }
+  }, {
+    "desc" : "single_efh_unicode_reason",
+    "note" : "non-ASCII reason: the CIPHERTEXT is what gets signed now, and the plaintext must still round-trip through the conversation key on both platforms",
+    "input" : {
+      "conversation_hash_name" : "a1b2c3d4e5f6789012345678901234567890123456789012345678901234abcd",
+      "target_message_signature" : "targetMsgSigParity0001targetMsgSigParity0001targetMsgSigParity0001targetMsgSigParity0001",
+      "target_efh" : [ "efhParity000000000000000000000000000000000000000000000000000000a1" ],
+      "client_ts" : 1767225600000,
+      "reason" : {
+        "pa" : "PBKDF2WithHmacSHA512",
+        "it" : 20000,
+        "tr" : "AES/CBC/PKCS5Padding",
+        "ka" : "AES",
+        "tv" : "v0_1_a",
+        "kl" : 256,
+        "ec" : "UTF-8",
+        "em" : [ "_n6xS-mxTN3UHv94Q4oM4A..", "nU5b53oNZXdQdsZF7PuGKJx8o_NpxiwCm9EtiV_xcxc_d8v8iO_BBpdSvTLkxHXb" ]
+      },
+      "reason_plaintext" : "messaggio errato — \"privacy\" è richiesta"
+    },
+    "pl_canonical_jcs" : "{\"client_ts\":1767225600000,\"conversation_hash_name\":\"a1b2c3d4e5f6789012345678901234567890123456789012345678901234abcd\",\"reason\":{\"ec\":\"UTF-8\",\"em\":[\"_n6xS-mxTN3UHv94Q4oM4A..\",\"nU5b53oNZXdQdsZF7PuGKJx8o_NpxiwCm9EtiV_xcxc_d8v8iO_BBpdSvTLkxHXb\"],\"it\":20000,\"ka\":\"AES\",\"kl\":256,\"pa\":\"PBKDF2WithHmacSHA512\",\"tr\":\"AES/CBC/PKCS5Padding\",\"tv\":\"v0_1_a\"},\"target_efh\":[\"efhParity000000000000000000000000000000000000000000000000000000a1\"],\"target_message_signature\":\"targetMsgSigParity0001targetMsgSigParity0001targetMsgSigParity0001targetMsgSigParity0001\"}",
+    "signature_b64url" : "5Veibr0CwXyQkrA0oUqsKpHj-Ubgn8oLuHze3-kNL-qeqqbgsVhwDsk7RNQ7IbcGjKC3ctKpb3gW-lWMNzd9Cw..",
+    "envelope_json" : {
+      "from" : "el3xvxJnLv9S9aWD0ei3g96YGOAvdYW_yn5z1eIvCDc.",
+      "signature" : "5Veibr0CwXyQkrA0oUqsKpHj-Ubgn8oLuHze3-kNL-qeqqbgsVhwDsk7RNQ7IbcGjKC3ctKpb3gW-lWMNzd9Cw..",
+      "message_type" : "DELETE_MESSAGE",
+      "signature_type" : "Ed25519BC",
+      "pl" : {
+        "conversation_hash_name" : "a1b2c3d4e5f6789012345678901234567890123456789012345678901234abcd",
+        "target_message_signature" : "targetMsgSigParity0001targetMsgSigParity0001targetMsgSigParity0001targetMsgSigParity0001",
+        "target_efh" : [ "efhParity000000000000000000000000000000000000000000000000000000a1" ],
+        "client_ts" : 1767225600000,
+        "reason" : {
+          "pa" : "PBKDF2WithHmacSHA512",
+          "it" : 20000,
+          "tr" : "AES/CBC/PKCS5Padding",
+          "ka" : "AES",
+          "tv" : "v0_1_a",
+          "kl" : 256,
+          "ec" : "UTF-8",
+          "em" : [ "_n6xS-mxTN3UHv94Q4oM4A..", "nU5b53oNZXdQdsZF7PuGKJx8o_NpxiwCm9EtiV_xcxc_d8v8iO_BBpdSvTLkxHXb" ]
+        }
+      }
+    }
+  } ],
+  "response_vectors" : [ {
+    "desc" : "accepted_with_purged_attachments",
+    "json" : {
+      "target_message_signature" : "targetMsgSigParity0001targetMsgSigParity0001targetMsgSigParity0001targetMsgSigParity0001",
+      "accepted" : true,
+      "server_delete_time" : 1767225601234,
+      "error" : null,
+      "purged_attachment_count" : 2
+    }
+  }, {
+    "desc" : "accepted_text_only",
+    "json" : {
+      "target_message_signature" : "targetMsgSigParity0001targetMsgSigParity0001targetMsgSigParity0001targetMsgSigParity0001",
+      "accepted" : true,
+      "server_delete_time" : 1767225601234,
+      "error" : null,
+      "purged_attachment_count" : 0
+    }
+  }, {
+    "desc" : "rejected_not_owner",
+    "json" : {
+      "target_message_signature" : "targetMsgSigParity0001targetMsgSigParity0001targetMsgSigParity0001targetMsgSigParity0001",
+      "accepted" : false,
+      "server_delete_time" : null,
+      "error" : "not_owner",
+      "purged_attachment_count" : 0
+    }
+  }, {
+    "desc" : "rejected_window_expired",
+    "json" : {
+      "target_message_signature" : "targetMsgSigParity0001targetMsgSigParity0001targetMsgSigParity0001targetMsgSigParity0001",
+      "accepted" : false,
+      "server_delete_time" : null,
+      "error" : "window_expired",
+      "purged_attachment_count" : 0
+    }
+  }, {
+    "desc" : "rejected_not_found",
+    "json" : {
+      "target_message_signature" : "targetMsgSigParity0001targetMsgSigParity0001targetMsgSigParity0001targetMsgSigParity0001",
+      "accepted" : false,
+      "server_delete_time" : null,
+      "error" : "not_found",
+      "purged_attachment_count" : 0
+    }
+  } ]
+}

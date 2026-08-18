@@ -12,7 +12,8 @@ import 'package:takamaka_sdk_wrap/utils/tkm_canonical_json.dart';
 /// Inline attachment threshold (~48 KB plaintext, safe under message blob limit).
 const int kChatAttachmentInlineMaxBytes = 48 * 1024;
 
-/// Default upload chunk size (matches Java rsclient).
+/// Default upload chunk when `serverinfo` was not probed (conservative 4 KB).
+/// Prefer [TkmChatClientApi.negotiatedUploadChunkBytes] after connect.
 const int kChatAttachmentUploadChunkSize = 4096;
 
 /// Helpers for rschat attachment encryption, wire placeholders, and signed requests.
@@ -174,8 +175,8 @@ abstract final class TkmChatAttachment {
 
   static Uint8List? inlineBytesFromWire(Map<String, dynamic> map) {
     if (!isInlineWireMap(map)) return null;
-    final preview = map['preview'] as String? ??
-        map['base64_encoded_media'] as String?;
+    final preview =
+        map['preview'] as String? ?? map['base64_encoded_media'] as String?;
     if (preview == null || preview.isEmpty) return null;
     try {
       return Uint8List.fromList(base64Decode(preview));

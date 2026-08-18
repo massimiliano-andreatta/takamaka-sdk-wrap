@@ -5,6 +5,7 @@ import 'package:takamaka_sdk_wrap/constants/chat_server_endpoints.dart';
 void main() {
   test('routes are lowercase without leading slash', () {
     const routes = [
+      ChatServerEndpoints.serverInfo,
       ChatServerEndpoints.nonce,
       ChatServerEndpoints.registerUser,
       ChatServerEndpoints.requestKeys,
@@ -14,6 +15,8 @@ void main() {
       ChatServerEndpoints.retrieveAllMessages,
       ChatServerEndpoints.retrieveAllConversations,
       ChatServerEndpoints.retrieveConversation,
+      ChatServerEndpoints.deleteMessage,
+      ChatServerEndpoints.retrieveDeletions,
       ChatServerEndpoints.notification,
       ChatServerEndpoints.notificationHistory,
       ChatServerEndpoints.submitAttachment,
@@ -23,6 +26,10 @@ void main() {
       ChatServerEndpoints.deleteFcmToken,
       ChatServerEndpoints.deleteAllFcmTokens,
       ChatServerEndpoints.timeUpdatesStream,
+      ChatServerEndpoints.submitReadReceipt,
+      ChatServerEndpoints.retrieveReadReceipts,
+      ChatServerEndpoints.typingSubscribe,
+      ChatServerEndpoints.typingEmit,
     ];
 
     for (final route in routes) {
@@ -45,6 +52,13 @@ void main() {
     expect(ChatServerEndpoints.createConversation, 'createconversation');
     expect(ChatServerEndpoints.messages, 'messages');
     expect(ChatServerEndpoints.retrieveMessages, 'retrievemessages');
+    expect(ChatServerEndpoints.serverInfo, 'serverinfo');
+    expect(ChatServerEndpoints.deleteMessage, 'deletemessage');
+    expect(ChatServerEndpoints.retrieveDeletions, 'retrievedeletions');
+    expect(ChatServerEndpoints.submitReadReceipt, 'submitreadreceipt');
+    expect(ChatServerEndpoints.retrieveReadReceipts, 'retrievereadreceipts');
+    expect(ChatServerEndpoints.typingSubscribe, 'typingsubscribe');
+    expect(ChatServerEndpoints.typingEmit, 'typingemit');
   });
 
   test('FCM delete routes match fcm_token_delete_api guide', () {

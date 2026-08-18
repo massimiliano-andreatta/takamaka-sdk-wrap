@@ -5,9 +5,11 @@ import 'package:flutter/foundation.dart';
 import 'package:takamaka_sdk_wrap/constants/chat_server_endpoints.dart';
 import 'package:takamaka_sdk_wrap/crypto/tkm_chat_attachment.dart';
 import 'package:takamaka_sdk_wrap/crypto/tkm_chat_crypto.dart';
+import 'package:takamaka_sdk_wrap/crypto/tkm_chat_manifest_limits.dart';
 import 'package:takamaka_sdk_wrap/enums/tkm_chat_enums_api.dart';
 import 'package:takamaka_sdk_wrap/models/chat/chat_key_material.dart';
 import 'package:takamaka_sdk_wrap/models/chat/stream_encrypted_descriptor.dart';
+import 'package:takamaka_sdk_wrap/models/chat/tkm_delete_message_response.dart';
 import 'package:takamaka_sdk_wrap/models/chat/upload_status_bean.dart';
 import 'package:takamaka_sdk_wrap/servicies/api/chat/tkm_rsocket_client.dart';
 
@@ -22,6 +24,24 @@ class TkmChatClientApi {
 
   /// Called after the WebSocket is reopened so the server session is restored.
   ChatTransportReconnectHandler? onTransportReconnect;
+
+  Map<String, dynamic>? _lastServerInfo;
+  TkmChatNegotiatedTransport? _negotiatedTransport;
+
+  /// Last `serverinfo` JSON, or null if never probed / the probe failed.
+  Map<String, dynamic>? get lastServerInfo => _lastServerInfo;
+
+  TkmChatNegotiatedTransport? get negotiatedTransport => _negotiatedTransport;
+
+  int get negotiatedUploadChunkBytes =>
+      _negotiatedTransport?.uploadChunkBytes ??
+      TkmChatManifestLimits.resolve(
+        0,
+        TkmChatManifestLimits.mobileUploadTargetBytes,
+      ).uploadChunkBytes;
+
+  bool isKnownUnsupported(String route) =>
+      _negotiatedTransport?.isKnownUnsupported(route) ?? false;
 
   bool get isTransportConnected => _client.isConnected;
 
@@ -66,6 +86,44 @@ class TkmChatClientApi {
   Future<Map<String, dynamic>> getNonce() async {
     final response = await _requestResponse(ChatServerEndpoints.nonce);
     return response ?? {};
+  }
+
+  /// Unsigned `serverinfo` probe (DR-022). Empty map if the server omits it.
+  Future<Map<String, dynamic>> getServerInfo() async {
+    final response = await _requestResponse(ChatServerEndpoints.serverInfo);
+    return response ?? {};
+  }
+
+  /// Probe `serverinfo` and size the attachment upload chunk (DR-022/023).
+  Future<TkmChatNegotiatedTransport?> negotiateTransport({
+    int uploadTargetBytes = TkmChatManifestLimits.mobileUploadTargetBytes,
+  }) async {
+    try {
+      final info = await getServerInfo();
+      _lastServerInfo = info;
+      final advertised = (info['maxFramePayloadLength'] as num?)?.toInt() ?? 0;
+      final resolution =
+          TkmChatManifestLimits.resolve(advertised, uploadTargetBytes);
+      final routes = info['supportedRoutes'];
+      _negotiatedTransport = TkmChatNegotiatedTransport(
+        resolution: resolution,
+        manifestVersion: info['manifestVersion'] as String? ?? '1.0',
+        serverVersion: info['serverVersion'] as String? ?? '',
+        clientDecoderMaxBytes: TkmChatManifestLimits.clientOwnMaxFrameBytes,
+        editDeleteWindowMs: (info['editDeleteWindowMs'] as num?)?.toInt() ?? 0,
+        maxAttachmentSizeBytes:
+            (info['maxAttachmentSizeBytes'] as num?)?.toInt() ?? 0,
+        supportedRoutes: routes is List
+            ? routes.whereType<String>().toList(growable: false)
+            : const <String>[],
+      );
+      return _negotiatedTransport;
+    } catch (e) {
+      debugPrint('serverinfo probe failed: $e');
+      _negotiatedTransport = null;
+      _lastServerInfo = null;
+      return null;
+    }
   }
 
   Future<Map<String, dynamic>> registerUser({
@@ -158,40 +216,64 @@ class TkmChatClientApi {
     return response ?? {};
   }
 
-  Future<Map<String, dynamic>> sendTyping({
+  /// Plain fire-and-forget typing emit (`typingemit`). Must follow a live
+  /// [subscribeTyping] on the same connection or the server drops the frame.
+  Future<void> emitTyping({
+    required String conversationHash,
+  }) {
+    return _client.fireAndForget(
+      ChatServerEndpoints.typingEmit,
+      TkmChatCrypto.buildTypingEmitPayload(conversationHash: conversationHash),
+    );
+  }
+
+  /// Signed request-stream `typingsubscribe`.
+  Stream<Map<String, dynamic>> subscribeTyping({
+    required ChatKeyMaterial keys,
+  }) async* {
+    final request = await TkmChatCrypto.buildTypingSubscribeRequest(keys: keys);
+    yield* _client.requestStream(
+      ChatServerEndpoints.typingSubscribe,
+      request,
+    );
+  }
+
+  /// Signed request-response `submitreadreceipt` (does **not** use `messages`).
+  Future<Map<String, dynamic>> submitReadReceipt({
     required ChatKeyMaterial keys,
     required String conversationHash,
     required String symmetricKey,
+    required String lastReadMessageSignature,
   }) async {
-    final request = await TkmChatCrypto.buildTypingMessageRequest(
+    final request = await TkmChatCrypto.buildReadReceiptRequest(
       keys: keys,
       conversationHash: conversationHash,
       symmetricKey: symmetricKey,
+      lastReadMessageSignature: lastReadMessageSignature,
     );
     final response = await _requestResponse(
-      ChatServerEndpoints.messages,
+      ChatServerEndpoints.submitReadReceipt,
       request,
     );
     return response ?? {};
   }
 
-  Future<Map<String, dynamic>> sendReadReceipt({
+  /// Signed request-stream `retrievereadreceipts`. Always pass a **fresh**
+  /// [nonce] from [getNonce] (single-use on subscribe).
+  Stream<Map<String, dynamic>> retrieveReadReceipts({
     required ChatKeyMaterial keys,
-    required String conversationHash,
-    required String symmetricKey,
-    required String readUpToMessageSignature,
-  }) async {
-    final request = await TkmChatCrypto.buildReadReceiptMessageRequest(
+    required Map<String, dynamic> nonce,
+    int? notBefore,
+  }) async* {
+    final request = await TkmChatCrypto.buildRetrieveReadReceiptsRequest(
       keys: keys,
-      conversationHash: conversationHash,
-      symmetricKey: symmetricKey,
-      readUpToMessageSignature: readUpToMessageSignature,
+      nonceResponse: nonce,
+      notBefore: notBefore,
     );
-    final response = await _requestResponse(
-      ChatServerEndpoints.messages,
+    yield* _client.requestStream(
+      ChatServerEndpoints.retrieveReadReceipts,
       request,
     );
-    return response ?? {};
   }
 
   Future<Map<String, dynamic>> sendReaction({
@@ -255,6 +337,45 @@ class TkmChatClientApi {
       request,
     );
     return response ?? {};
+  }
+
+  /// DR-025 "delete for everyone" (`deletemessage`).
+  Future<TkmDeleteMessageResponse> deleteMessage({
+    required ChatKeyMaterial keys,
+    required String conversationHash,
+    required String targetMessageSignature,
+    List<String>? targetEncryptedFileHashes,
+    Map<String, dynamic>? encryptedReason,
+  }) async {
+    final request = await TkmChatCrypto.buildDeleteMessageRequest(
+      keys: keys,
+      conversationHash: conversationHash,
+      targetMessageSignature: targetMessageSignature,
+      targetEncryptedFileHashes: targetEncryptedFileHashes,
+      encryptedReason: encryptedReason,
+    );
+    final response = await _requestResponse(
+      ChatServerEndpoints.deleteMessage,
+      request,
+    );
+    return TkmDeleteMessageResponse.fromJson(response ?? const {});
+  }
+
+  /// DR-025 deletion-log catch-up (`retrievedeletions`).
+  Stream<Map<String, dynamic>> retrieveDeletions({
+    required ChatKeyMaterial keys,
+    required String conversationHash,
+    int? since,
+  }) async* {
+    final request = await TkmChatCrypto.buildRetrieveDeletionsRequest(
+      keys: keys,
+      conversationHash: conversationHash,
+      since: since,
+    );
+    yield* _client.requestStream(
+      ChatServerEndpoints.retrieveDeletions,
+      request,
+    );
   }
 
   Future<Map<String, dynamic>> pinMessage({
@@ -367,9 +488,10 @@ class TkmChatClientApi {
     required ChatKeyMaterial keys,
     required String conversationHash,
     required EncryptedAttachmentResult encrypted,
-    int chunkSize = kChatAttachmentUploadChunkSize,
+    int? chunkSize,
     void Function(double progress)? onUploadProgress,
   }) async {
+    final effectiveChunk = chunkSize ?? negotiatedUploadChunkBytes;
     final signedRequest = await TkmChatAttachment.buildSignedUploadRequest(
       keys: keys,
       conversationHash: conversationHash,
@@ -390,7 +512,7 @@ class TkmChatClientApi {
     unawaited(_emitUploadChunks(
       controller,
       encrypted.encryptedData,
-      chunkSize,
+      effectiveChunk,
     ));
 
     UploadStatusBean? lastStatus;
@@ -398,19 +520,18 @@ class TkmChatClientApi {
       // Idle timeout between status ACKs (resets on each event); overall cap 5 min.
       final responseStream = _client
           .requestChannelForUploadJson(
-            ChatServerEndpoints.submitAttachment,
-            controller.stream,
-            signedRequestJson,
-          )
+        ChatServerEndpoints.submitAttachment,
+        controller.stream,
+        signedRequestJson,
+      )
           .timeout(
-            const Duration(seconds: 90),
-            onTimeout: (EventSink<Map<String, dynamic>> sink) {
-              sink.addError(
-                StateError('Attachment upload stalled (no server ACK)'),
-              );
-            },
-          )
-          .timeout(const Duration(minutes: 5));
+        const Duration(seconds: 90),
+        onTimeout: (EventSink<Map<String, dynamic>> sink) {
+          sink.addError(
+            StateError('Attachment upload stalled (no server ACK)'),
+          );
+        },
+      ).timeout(const Duration(minutes: 5));
 
       await for (final statusJson in responseStream) {
         final status = UploadStatusBean.fromJson(statusJson);
@@ -422,7 +543,7 @@ class TkmChatClientApi {
         if (totalBytes > 0) {
           final uploadedChunk = status.uploadedChunk ?? 0;
           // rsclient: bytesUploaded = uploaded_chunk * chunkSize
-          var uploadedBytes = uploadedChunk * chunkSize;
+          var uploadedBytes = uploadedChunk * effectiveChunk;
           if (uploadedBytes > totalBytes) uploadedBytes = totalBytes;
           if (status.isComplete) {
             reportProgress(0.99);

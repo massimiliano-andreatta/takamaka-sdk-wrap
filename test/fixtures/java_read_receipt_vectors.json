@@ -1,0 +1,98 @@
+{
+  "version" : "1.0.0",
+  "generated_by" : "ReadReceiptParityVectorTest.java",
+  "source" : "rsclient + Messages (Java reference)",
+  "read_receipt_constants" : {
+    "message_type" : "READ_RECEIPT",
+    "scope" : "READ_RECEIPT",
+    "protocol_version" : "1.0",
+    "cipher_version" : "v0_1_a",
+    "kdf" : "PBKDF2WithHmacSHA512",
+    "iterations" : 20000,
+    "key_size_bits" : 256,
+    "algorithm" : "AES/CBC/PKCS5Padding",
+    "pl_key_order_jcs" : [ "conv", "enc", "iv", "pv", "v" ]
+  },
+  "encryption_vectors" : [ {
+    "conversation_hash_name" : "a1b2c3d4e5f6789012345678901234567890123456789012345678901234abcd",
+    "conversation_key" : "parity-conversation-symmetric-key",
+    "watermark_plaintext" : "msgSigParity0001msgSigParity0001msgSigParity0001msgSigParity0001msgSigParity0001msgSig..",
+    "iv_b64url" : "AAAAAAAAAAAAAAAAAAAAAA..",
+    "enc_b64url" : "mz5Fc8cEbhD_Uatc1OoPKN2Yw3e-zLIQkUCyiI0Bu4UVxs2SWuBfL733UgMGvVmlNla-zyTAV5DGOkwqVv_gquKScC_m6P8Id7MhpobKCd8mSP9xd_p4R4KZ6Z6Vkjps",
+    "pl_canonical_jcs" : "{\"conv\":\"a1b2c3d4e5f6789012345678901234567890123456789012345678901234abcd\",\"enc\":\"mz5Fc8cEbhD_Uatc1OoPKN2Yw3e-zLIQkUCyiI0Bu4UVxs2SWuBfL733UgMGvVmlNla-zyTAV5DGOkwqVv_gquKScC_m6P8Id7MhpobKCd8mSP9xd_p4R4KZ6Z6Vkjps\",\"iv\":\"AAAAAAAAAAAAAAAAAAAAAA..\",\"pv\":\"1.0\",\"v\":\"v0_1_a\"}"
+  } ],
+  "signature_vector" : {
+    "mnemonic" : "sample half mammal radar hold fit era dilemma manage movie razor saddle point dial sadness north item naive gate hockey sample script embark purse myth",
+    "key_index" : 4,
+    "signer_public_key" : "el3xvxJnLv9S9aWD0ei3g96YGOAvdYW_yn5z1eIvCDc.",
+    "pl_canonical_jcs" : "{\"conv\":\"a1b2c3d4e5f6789012345678901234567890123456789012345678901234abcd\",\"enc\":\"mz5Fc8cEbhD_Uatc1OoPKN2Yw3e-zLIQkUCyiI0Bu4UVxs2SWuBfL733UgMGvVmlNla-zyTAV5DGOkwqVv_gquKScC_m6P8Id7MhpobKCd8mSP9xd_p4R4KZ6Z6Vkjps\",\"iv\":\"AAAAAAAAAAAAAAAAAAAAAA..\",\"pv\":\"1.0\",\"v\":\"v0_1_a\"}",
+    "signature_b64url" : "x5sIs3Jhqw_mnnn7pcmYS_o8YoAFiPAiwBPtQvqncLHfy7qI7pEy3VEuFU7vdEfuhdcF2uvXm5Auum9HrQ0vDA..",
+    "note" : "Ed25519 over canonical(pl); deterministic — Flutter derives the same key from the mnemonic and reproduces this signature"
+  },
+  "merge_vectors" : [ {
+    "desc" : "first_resolve_advances",
+    "initial" : {
+      "lastReadMessageSignature" : null,
+      "lastReadTimestamp" : null
+    },
+    "candidate_signature" : "sigA",
+    "candidate_timestamp" : 100,
+    "expected_advanced" : true,
+    "expected_cursor" : {
+      "lastReadMessageSignature" : "sigA",
+      "lastReadTimestamp" : 100
+    }
+  }, {
+    "desc" : "newer_ts_advances",
+    "initial" : {
+      "lastReadMessageSignature" : "sigA",
+      "lastReadTimestamp" : 100
+    },
+    "candidate_signature" : "sigB",
+    "candidate_timestamp" : 200,
+    "expected_advanced" : true,
+    "expected_cursor" : {
+      "lastReadMessageSignature" : "sigB",
+      "lastReadTimestamp" : 200
+    }
+  }, {
+    "desc" : "older_ts_ignored",
+    "initial" : {
+      "lastReadMessageSignature" : "sigB",
+      "lastReadTimestamp" : 200
+    },
+    "candidate_signature" : "sigC",
+    "candidate_timestamp" : 150,
+    "expected_advanced" : false,
+    "expected_cursor" : {
+      "lastReadMessageSignature" : "sigB",
+      "lastReadTimestamp" : 200
+    }
+  }, {
+    "desc" : "equal_ts_lower_sig_ignored",
+    "initial" : {
+      "lastReadMessageSignature" : "sigM",
+      "lastReadTimestamp" : 100
+    },
+    "candidate_signature" : "sigA",
+    "candidate_timestamp" : 100,
+    "expected_advanced" : false,
+    "expected_cursor" : {
+      "lastReadMessageSignature" : "sigM",
+      "lastReadTimestamp" : 100
+    }
+  }, {
+    "desc" : "equal_ts_higher_sig_advances",
+    "initial" : {
+      "lastReadMessageSignature" : "sigM",
+      "lastReadTimestamp" : 100
+    },
+    "candidate_signature" : "sigZ",
+    "candidate_timestamp" : 100,
+    "expected_advanced" : true,
+    "expected_cursor" : {
+      "lastReadMessageSignature" : "sigZ",
+      "lastReadTimestamp" : 100
+    }
+  } ]
+}

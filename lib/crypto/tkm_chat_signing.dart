@@ -25,11 +25,38 @@ abstract final class TkmChatSigning {
     return signUtf8Message(keyPair, canonical);
   }
 
+  /// Signs [signedContent] with BouncyCastle `Strings.toByteArray` encoding
+  /// (DR-027 / rsclient `JavaCompatibleSigning`). ASCII canonical JSON matches
+  /// UTF-8; required for any non-ASCII cleartext in the sign unit.
+  static Future<String> signCanonicalJsonJavaCompatible(
+    SimpleKeyPair keyPair,
+    Object signedContent,
+  ) async {
+    final canonical = TkmCanonicalJson.encode(signedContent);
+    return signBytes(keyPair, javaToByteArray(canonical));
+  }
+
+  /// BouncyCastle `Strings.toByteArray`: one byte per UTF-16 code unit, low 8 bits.
+  static Uint8List javaToByteArray(String message) {
+    final codeUnits = message.codeUnits;
+    final bytes = Uint8List(codeUnits.length);
+    for (var i = 0; i < codeUnits.length; i++) {
+      bytes[i] = codeUnits[i] & 0xFF;
+    }
+    return bytes;
+  }
+
   static Future<String> signUtf8Message(
     SimpleKeyPair keyPair,
     String message,
   ) async {
-    final messageBytes = utf8.encode(message);
+    return signBytes(keyPair, Uint8List.fromList(utf8.encode(message)));
+  }
+
+  static Future<String> signBytes(
+    SimpleKeyPair keyPair,
+    Uint8List messageBytes,
+  ) async {
     final signature = await _algorithm.sign(
       messageBytes,
       keyPair: keyPair,
@@ -41,10 +68,46 @@ abstract final class TkmChatSigning {
     required String publicKeyUrl64,
     required String signatureUrl64,
     required String message,
+  }) {
+    return verifyBytes(
+      publicKeyUrl64: publicKeyUrl64,
+      signatureUrl64: signatureUrl64,
+      messageBytes: Uint8List.fromList(utf8.encode(message)),
+    );
+  }
+
+  static Future<bool> verifyCanonicalJson({
+    required String publicKeyUrl64,
+    required String signatureUrl64,
+    required Object signedContent,
+  }) {
+    return verifyUtf8Message(
+      publicKeyUrl64: publicKeyUrl64,
+      signatureUrl64: signatureUrl64,
+      message: TkmCanonicalJson.encode(signedContent),
+    );
+  }
+
+  static Future<bool> verifyCanonicalJsonJavaCompatible({
+    required String publicKeyUrl64,
+    required String signatureUrl64,
+    required Object signedContent,
+  }) {
+    final canonical = TkmCanonicalJson.encode(signedContent);
+    return verifyBytes(
+      publicKeyUrl64: publicKeyUrl64,
+      signatureUrl64: signatureUrl64,
+      messageBytes: javaToByteArray(canonical),
+    );
+  }
+
+  static Future<bool> verifyBytes({
+    required String publicKeyUrl64,
+    required String signatureUrl64,
+    required Uint8List messageBytes,
   }) async {
     final publicKeyBytes = TkmBase64Url.decode(publicKeyUrl64);
     final signatureBytes = TkmBase64Url.decode(signatureUrl64);
-    final messageBytes = utf8.encode(message);
     final publicKey = SimplePublicKey(
       publicKeyBytes,
       type: KeyPairType.ed25519,

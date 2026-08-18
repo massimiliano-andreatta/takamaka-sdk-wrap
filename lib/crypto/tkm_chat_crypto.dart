@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:takamaka_sdk_wrap/constants/chat_message_types.dart';
 import 'package:takamaka_sdk_wrap/crypto/tkm_chat_encryption.dart';
@@ -9,6 +10,12 @@ import 'package:takamaka_sdk_wrap/models/chat/chat_key_material.dart';
 /// High-level chat crypto orchestration (port of Java [ChatCryptoUtils]).
 abstract final class TkmChatCrypto {
   static const String clientProtocolVersion = '1.1';
+
+  /// Receipt / typing `pv` on dedicated channels (READ_RECEIPT / TYPING designs).
+  static const String signalProtocolVersion = '1.0';
+
+  /// Cipher version on read-receipt `pl.v`.
+  static const String receiptCipherVersion = 'v0_1_a';
 
   /// Parent message signature for reply/reaction actions (message-actions spec).
   static final RegExp parentMessageSignaturePattern =
@@ -272,54 +279,160 @@ abstract final class TkmChatCrypto {
     );
   }
 
-  /// Ephemeral typing indicator — encrypted inner action relayed via retrievemessages.
-  static Future<Map<String, dynamic>> buildTypingMessageRequest({
+  /// Signed `typingsubscribe` envelope — TYPING_INDICATOR_DESIGN / messages-api.
+  ///
+  /// `pl` is `{ts, pv}` only. Emits are unsigned `{conv, pv}` (no `from`).
+  static Future<Map<String, dynamic>> buildTypingSubscribeRequest({
     required ChatKeyMaterial keys,
-    required String conversationHash,
-    required String symmetricKey,
+    int? clientTimestamp,
   }) async {
-    final innerPlaintext = {
-      'attached_media': <Map<String, dynamic>>[],
-      'action': 'typing',
-      'client_protocol_version': clientProtocolVersion,
+    final pl = <String, dynamic>{
+      'pv': signalProtocolVersion,
+      'ts': clientTimestamp ?? DateTime.now().millisecondsSinceEpoch,
     };
-    return _buildSignedBasicMessageRequest(
-      keys: keys,
-      conversationHash: conversationHash,
-      symmetricKey: symmetricKey,
-      innerPlaintext: innerPlaintext,
-      citedUsers: const [],
+    final signature = await TkmChatSigning.signCanonicalJson(
+      keys.signKeyPair,
+      pl,
+    );
+    final from = await TkmChatSigning.publicKeyUrl64(keys.signKeyPair);
+    return TkmChatSigning.signedEnvelope(
+      from: from,
+      signature: signature,
+      messageType: ChatMessageTypes.typingSubscribe,
+      signedContentKey: 'pl',
+      signedContentField: pl,
     );
   }
 
-  /// Read receipt — encrypted inner action relayed via retrievemessages.
-  /// [readUpToMessageSignature] is the last message the reader has seen.
-  static Future<Map<String, dynamic>> buildReadReceiptMessageRequest({
+  /// Unsigned fire-and-forget body for `typingemit`.
+  static Map<String, dynamic> buildTypingEmitPayload({
+    required String conversationHash,
+  }) {
+    return {
+      'conv': conversationHash,
+      'pv': signalProtocolVersion,
+    };
+  }
+
+  /// Dedicated read receipt — READ_RECEIPT_DESIGN §6 / §12.3.
+  ///
+  /// Encrypts the last-read **message signature string** (UTF-8, not JSON)
+  /// with PBKDF2 scope [ChatMessageTypes.readReceipt]. `pl` keys are
+  /// `{conv, enc, iv, pv, v}` (JCS order). [iv] is for vector tests only.
+  static Future<Map<String, dynamic>> buildReadReceiptRequest({
     required ChatKeyMaterial keys,
     required String conversationHash,
     required String symmetricKey,
-    required String readUpToMessageSignature,
+    required String lastReadMessageSignature,
+    Uint8List? iv,
   }) async {
-    if (!isValidParentMessageSignature(readUpToMessageSignature)) {
+    if (!isValidParentMessageSignature(lastReadMessageSignature)) {
       throw ArgumentError.value(
-        readUpToMessageSignature,
-        'readUpToMessageSignature',
+        lastReadMessageSignature,
+        'lastReadMessageSignature',
         'Must match Ed25519 message signature format (86 chars + ..)',
       );
     }
-    final innerPlaintext = {
-      'attached_media': <Map<String, dynamic>>[],
-      'action': 'read',
-      'targets': [readUpToMessageSignature],
-      'client_protocol_version': clientProtocolVersion,
-    };
-    return _buildSignedBasicMessageRequest(
-      keys: keys,
-      conversationHash: conversationHash,
-      symmetricKey: symmetricKey,
-      innerPlaintext: innerPlaintext,
-      citedUsers: const [],
+    final encrypted = TkmChatEncryption.encryptUtf8String(
+      password: symmetricKey,
+      plaintext: lastReadMessageSignature,
+      scope: ChatMessageTypes.readReceipt,
+      iv: iv,
     );
+    final em = encrypted['encrypted_message'] as List<dynamic>;
+    final pl = <String, dynamic>{
+      'conv': conversationHash,
+      'enc': em[1],
+      'iv': em[0],
+      'pv': signalProtocolVersion,
+      'v': receiptCipherVersion,
+    };
+    final signature = await TkmChatSigning.signCanonicalJson(
+      keys.signKeyPair,
+      pl,
+    );
+    final from = await TkmChatSigning.publicKeyUrl64(keys.signKeyPair);
+    return TkmChatSigning.signedEnvelope(
+      from: from,
+      signature: signature,
+      messageType: ChatMessageTypes.readReceipt,
+      signedContentKey: 'pl',
+      signedContentField: pl,
+    );
+  }
+
+  /// Signed `retrievereadreceipts` subscribe — `pl = {nonce, not_before}`.
+  static Future<Map<String, dynamic>> buildRetrieveReadReceiptsRequest({
+    required ChatKeyMaterial keys,
+    required Map<String, dynamic> nonceResponse,
+    int? notBefore,
+  }) async {
+    final pl = <String, dynamic>{
+      'nonce': nonceResponse,
+    };
+    if (notBefore != null) {
+      pl['not_before'] = notBefore;
+    }
+    final signature = await TkmChatSigning.signCanonicalJson(
+      keys.signKeyPair,
+      pl,
+    );
+    final from = await TkmChatSigning.publicKeyUrl64(keys.signKeyPair);
+    return TkmChatSigning.signedEnvelope(
+      from: from,
+      signature: signature,
+      messageType: ChatMessageTypes.retrieveReadReceipts,
+      signedContentKey: 'pl',
+      signedContentField: pl,
+    );
+  }
+
+  /// Verify-then-decrypt a `READ_RECEIPT` envelope. Returns the watermark
+  /// signature string, or null if the signature/ciphertext is invalid.
+  static Future<String?> decryptReadReceiptWatermark({
+    required Map<String, dynamic> envelope,
+    required String symmetricKey,
+    String? expectedConversationHash,
+  }) async {
+    if (envelope['message_type'] != ChatMessageTypes.readReceipt) {
+      return null;
+    }
+    final plRaw = envelope['pl'];
+    if (plRaw is! Map) return null;
+    final pl = Map<String, dynamic>.from(plRaw);
+    final from = envelope['from'] as String? ?? '';
+    final signature = envelope['signature'] as String? ?? '';
+    if (from.isEmpty || signature.isEmpty) return null;
+    final conv = pl['conv'] as String? ?? '';
+    if (expectedConversationHash != null &&
+        expectedConversationHash.isNotEmpty &&
+        conv != expectedConversationHash) {
+      return null;
+    }
+    final verified = await TkmChatSigning.verifyCanonicalJson(
+      publicKeyUrl64: from,
+      signatureUrl64: signature,
+      signedContent: pl,
+    );
+    if (!verified) return null;
+    final enc = pl['enc'] as String?;
+    final iv = pl['iv'] as String?;
+    if (enc == null || enc.isEmpty || iv == null || iv.isEmpty) return null;
+    try {
+      return await TkmChatEncryption.decryptWithPasswordAsync(
+        password: symmetricKey,
+        encMessage: {
+          'encrypted_message': [iv, enc],
+          'transformation': 'AES/CBC/PKCS5Padding',
+          'tk_version': pl['v'] as String? ?? receiptCipherVersion,
+          'iterations': 20000,
+          'output_key_length_bit': 256,
+        },
+        scope: ChatMessageTypes.readReceipt,
+      );
+    } catch (_) {
+      return null;
+    }
   }
 
   /// Pin message at conversation top — message-actions/pin.md.
@@ -521,8 +634,14 @@ abstract final class TkmChatCrypto {
     return null;
   }
 
-  /// Conversation hash from a signed [BasicMessageRequestBean] map.
+  /// Conversation hash from a signed [BasicMessageRequestBean] map, or from
+  /// the cleartext `pl` of a DR-025 `DELETE_MESSAGE` envelope.
   static String? conversationHashFromEnvelope(Map<String, dynamic> envelope) {
+    final pl = envelope['pl'];
+    if (pl is Map) {
+      final hash = pl['conversation_hash_name'];
+      if (hash is String && hash.isNotEmpty) return hash;
+    }
     final rawContent = envelope['basic_message_signed_content_bean'] ??
         envelope['basic_message_signed_content'];
     if (rawContent is! Map) return null;
@@ -611,6 +730,107 @@ abstract final class TkmChatCrypto {
       citedUsers: const [],
     );
   }
+
+  /// DR-025 "delete for everyone" — `deletemessage` (rsclient CallHelper).
+  ///
+  /// [encryptedReason] is already a wire EncMessageBean map (scope
+  /// `DELETE_MESSAGE`); omit it so Jackson NON_EMPTY drops the field.
+  static Future<Map<String, dynamic>> buildDeleteMessageRequest({
+    required ChatKeyMaterial keys,
+    required String conversationHash,
+    required String targetMessageSignature,
+    List<String>? targetEncryptedFileHashes,
+    Map<String, dynamic>? encryptedReason,
+    int? clientTimestamp,
+  }) async {
+    if (!isValidParentMessageSignature(targetMessageSignature)) {
+      throw ArgumentError.value(
+        targetMessageSignature,
+        'targetMessageSignature',
+        'Must match Ed25519 message signature format (86 chars + ..)',
+      );
+    }
+    final pl = <String, dynamic>{
+      'conversation_hash_name': conversationHash,
+      'target_message_signature': targetMessageSignature,
+      'client_ts': clientTimestamp ?? DateTime.now().millisecondsSinceEpoch,
+    };
+    final efh = targetEncryptedFileHashes
+            ?.map((h) => h.trim())
+            .where((h) => h.isNotEmpty)
+            .toList() ??
+        const <String>[];
+    if (efh.isNotEmpty) {
+      pl['target_efh'] = efh;
+    }
+    if (encryptedReason != null && encryptedReason.isNotEmpty) {
+      pl['reason'] = encryptedReason;
+    }
+    final signature = await TkmChatSigning.signCanonicalJsonJavaCompatible(
+      keys.signKeyPair,
+      pl,
+    );
+    final from = await TkmChatSigning.publicKeyUrl64(keys.signKeyPair);
+    return TkmChatSigning.signedEnvelope(
+      from: from,
+      signature: signature,
+      messageType: ChatMessageTypes.deleteMessage,
+      signedContentKey: 'pl',
+      signedContentField: pl,
+    );
+  }
+
+  /// Optional delete-reason ciphertext (scope `DELETE_MESSAGE`). Null/blank
+  /// stays absent from `canonical(pl)`.
+  static Map<String, dynamic>? encryptDeleteReason({
+    required String symmetricKey,
+    String? reason,
+  }) {
+    final trimmed = reason?.trim();
+    if (trimmed == null || trimmed.isEmpty) return null;
+    return TkmChatEncryption.toWireEncMessage(
+      TkmChatEncryption.encryptUtf8String(
+        password: symmetricKey,
+        plaintext: trimmed,
+        scope: ChatMessageTypes.deleteMessage,
+      ),
+    );
+  }
+
+  /// DR-025 deletion-log catch-up — `retrievedeletions`.
+  ///
+  /// [since] null is omitted (NON_EMPTY); `0` is present and is a different
+  /// sign unit.
+  static Future<Map<String, dynamic>> buildRetrieveDeletionsRequest({
+    required ChatKeyMaterial keys,
+    required String conversationHash,
+    int? since,
+    int? clientTimestamp,
+  }) async {
+    final pl = <String, dynamic>{
+      'conversation_hash_name': conversationHash,
+      'client_ts': clientTimestamp ?? DateTime.now().millisecondsSinceEpoch,
+    };
+    if (since != null) {
+      pl['since'] = since;
+    }
+    final signature = await TkmChatSigning.signCanonicalJsonJavaCompatible(
+      keys.signKeyPair,
+      pl,
+    );
+    final from = await TkmChatSigning.publicKeyUrl64(keys.signKeyPair);
+    return TkmChatSigning.signedEnvelope(
+      from: from,
+      signature: signature,
+      messageType: ChatMessageTypes.retrieveDeletions,
+      signedContentKey: 'pl',
+      signedContentField: pl,
+    );
+  }
+
+  /// True when decrypted content is a replayed forward/share_history.
+  static bool isReplayAction(String? action) =>
+      action == 'forward' || action == 'share_history';
 
   /// Download attachment — CLIENT_API_GUIDE §5.11 (`retrieveattachment`).
   static Future<Map<String, dynamic>> buildSignedDownloadRequest({
@@ -992,8 +1212,7 @@ abstract final class TkmChatCrypto {
                     encKeyHash,
               )
               .toList();
-      final rsaOrder =
-          matchingRsa.isNotEmpty ? matchingRsa : rsaCandidates;
+      final rsaOrder = matchingRsa.isNotEmpty ? matchingRsa : rsaCandidates;
 
       for (final rsa in rsaOrder) {
         try {
@@ -1125,6 +1344,21 @@ abstract final class TkmChatCrypto {
     } catch (_) {
       return null;
     }
+  }
+
+  /// Async variant: prewarms the conversation AES key off-isolate, then
+  /// decrypts on the caller isolate (AES-only after cache hit).
+  static Future<Map<String, dynamic>?> decryptContentFromMessageEnvelopeAsync({
+    required Map<String, dynamic> envelope,
+    required String symmetricKey,
+    String? filterConversationHash,
+  }) async {
+    await TkmChatEncryption.prewarmConversationKey(symmetricKey);
+    return decryptContentFromMessageEnvelope(
+      envelope: envelope,
+      symmetricKey: symmetricKey,
+      filterConversationHash: filterConversationHash,
+    );
   }
 
   /// Decrypts plaintext from a live/history [BasicMessageRequestBean] JSON map.

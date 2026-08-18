@@ -35,6 +35,7 @@ class TkmChatService {
     if (keys == null) return;
     _restoringTransport = true;
     try {
+      await _api.negotiateTransport();
       _registeredUser = await _api.reregisterUser(keys: keys);
     } finally {
       _restoringTransport = false;
@@ -109,6 +110,7 @@ class TkmChatService {
         rsaKeyFallbacks: fallbacks,
       );
     }
+    await _api.negotiateTransport();
     final nonce = await _api.getNonce();
     _registeredUser = await TkmChatCrypto.buildRegisterUserRequest(
       keys: _keys!,

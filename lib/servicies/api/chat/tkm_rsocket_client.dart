@@ -187,9 +187,8 @@ class TkmRsChatClient {
     final metadata = CompositeMetadata.fromEntries([
       RoutingMetadata(route, []),
     ]).toUint8Array();
-    final Uint8List? body = data == null
-        ? null
-        : Uint8List.fromList(utf8.encode(jsonEncode(data)));
+    final Uint8List? body =
+        data == null ? null : Uint8List.fromList(utf8.encode(jsonEncode(data)));
     return Payload.from(metadata, body);
   }
 
