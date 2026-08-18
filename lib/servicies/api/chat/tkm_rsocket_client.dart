@@ -54,7 +54,8 @@ class TkmRsChatClient {
         .connect(wsUrl)
         .timeout(connectTimeout);
     if (socket is! RSocketRequester) {
-      throw StateError('Unexpected RSocket implementation: ${socket.runtimeType}');
+      throw StateError(
+          'Unexpected RSocket implementation: ${socket.runtimeType}');
     }
     _socket = socket;
     _wireTransportCloseHandler(socket);
