@@ -90,10 +90,22 @@ class TkmRsChatClient {
   ]) async {
     await connect();
     final payload = _buildPayload(route, data);
-    final response = await _socket!
-        .requestResponse!(payload)
-        .timeout(requestTimeout);
+    final response =
+        await _socket!.requestResponse!(payload).timeout(requestTimeout);
     return _decodeJsonMap(response);
+  }
+
+  /// RSocket fire-and-forget (no response payload).
+  Future<void> fireAndForget(
+    String route, [
+    Object? data,
+  ]) async {
+    await connect();
+    final fnf = _socket!.fireAndForget;
+    if (fnf == null) {
+      throw StateError('RSocket fireAndForget not supported');
+    }
+    await fnf(_buildPayload(route, data)).timeout(requestTimeout);
   }
 
   Stream<Map<String, dynamic>> requestStream(
