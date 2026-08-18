@@ -31,7 +31,8 @@ void main() {
 
       expect(request['message_type'], ChatMessageTypes.requestUserKeys);
       expect(request['signature_type'], 'Ed25519BC');
-      expect(request.containsKey('request_user_key_request_bean_signed_content'),
+      expect(
+          request.containsKey('request_user_key_request_bean_signed_content'),
           isTrue);
 
       final items = request['request_user_key_request_bean_signed_content']

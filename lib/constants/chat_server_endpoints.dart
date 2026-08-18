@@ -1,5 +1,8 @@
 /// RSocket route names (no leading slash) — must match server [ChatServerEndpoints].
 abstract final class ChatServerEndpoints {
+  /// Unsigned capabilities probe (DR-022 / DR-023 transport manifest).
+  static const String serverInfo = 'serverinfo';
+
   static const String nonce = 'nonce';
   static const String registerUser = 'registeruser';
   static const String requestKeys = 'requestkeys';
@@ -9,6 +12,13 @@ abstract final class ChatServerEndpoints {
   static const String retrieveAllMessages = 'retrieveallmessages';
   static const String retrieveAllConversations = 'retrieveallconversations';
   static const String retrieveConversation = 'retrieveconversation';
+
+  /// Owner-signed "delete for everyone" (DR-025).
+  static const String deleteMessage = 'deletemessage';
+
+  /// Deletion-log catch-up stream (DR-025).
+  static const String retrieveDeletions = 'retrievedeletions';
+
   static const String notification = 'notification';
   static const String notificationHistory = 'notificationhistory';
   static const String submitAttachment = 'submitattachment';
@@ -23,4 +33,16 @@ abstract final class ChatServerEndpoints {
   static const String deleteAllFcmTokens = 'deleteallfcmtokens';
 
   static const String timeUpdatesStream = 'my.time-updates.stream';
+
+  /// Signed request-response read receipt (READ_RECEIPT_DESIGN).
+  static const String submitReadReceipt = 'submitreadreceipt';
+
+  /// Signed request-stream of read-receipt batches (nonce-gated).
+  static const String retrieveReadReceipts = 'retrievereadreceipts';
+
+  /// Signed request-stream typing sink (TYPING_INDICATOR_DESIGN).
+  static const String typingSubscribe = 'typingsubscribe';
+
+  /// Plain fire-and-forget typing emit (`{conv, pv}` — no `from`).
+  static const String typingEmit = 'typingemit';
 }
