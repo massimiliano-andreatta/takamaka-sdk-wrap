@@ -28,4 +28,14 @@ abstract final class ChatMessageTypes {
 
   /// Signed subscribe for `typingsubscribe` (TYPING_INDICATOR_DESIGN).
   static const String typingSubscribe = 'TYPING_SUBSCRIBE';
+
+  // Profile channel (DR-032) — envelope `message_type` is the CHAT_MESSAGE_TYPES
+  // enum value (UPPER_SNAKE), distinct from the RSocket route (lowercase).
+  // See USER_PROFILE_DESIGN D4 and rsclient ChatMessageTypes.
+  static const String setUserProfile = 'SET_USER_PROFILE';
+  static const String putProfileGrants = 'PUT_PROFILE_GRANTS';
+  static const String clearUserProfile = 'CLEAR_USER_PROFILE';
+  static const String getUserProfile = 'GET_USER_PROFILE';
+  static const String getProfileDigests = 'GET_PROFILE_DIGESTS';
+  static const String getUserProfilePeer = 'GET_USER_PROFILE_PEER';
 }

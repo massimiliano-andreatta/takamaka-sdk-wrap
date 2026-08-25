@@ -6,9 +6,11 @@ import 'package:takamaka_sdk_wrap/constants/chat_server_endpoints.dart';
 import 'package:takamaka_sdk_wrap/crypto/tkm_chat_attachment.dart';
 import 'package:takamaka_sdk_wrap/crypto/tkm_chat_crypto.dart';
 import 'package:takamaka_sdk_wrap/crypto/tkm_chat_manifest_limits.dart';
+import 'package:takamaka_sdk_wrap/crypto/tkm_chat_profile_requests.dart';
 import 'package:takamaka_sdk_wrap/enums/tkm_chat_enums_api.dart';
 import 'package:takamaka_sdk_wrap/models/chat/chat_key_material.dart';
 import 'package:takamaka_sdk_wrap/models/chat/stream_encrypted_descriptor.dart';
+import 'package:takamaka_sdk_wrap/models/chat/tkm_chat_profile_models.dart';
 import 'package:takamaka_sdk_wrap/models/chat/tkm_delete_message_response.dart';
 import 'package:takamaka_sdk_wrap/models/chat/upload_status_bean.dart';
 import 'package:takamaka_sdk_wrap/servicies/api/chat/tkm_rsocket_client.dart';
@@ -917,6 +919,113 @@ class TkmChatClientApi {
       debugPrint('chat[rschat] $route stack: $st');
       rethrow;
     }
+  }
+
+  // --- User profile channel -------------------------------------------------
+
+  Future<Map<String, dynamic>> setUserProfile({
+    required ChatKeyMaterial keys,
+    required Map<String, dynamic> nonce,
+    required TkmEncryptedProfile profile,
+    required List<TkmProfileGrant> grants,
+  }) async {
+    final request = await TkmChatProfileRequests.buildSetUserProfileRequest(
+      keys: keys,
+      nonceResponse: nonce,
+      profile: profile,
+      grants: grants,
+    );
+    return await _requestResponse(
+          ChatServerEndpoints.setUserProfile,
+          request,
+        ) ??
+        {};
+  }
+
+  Future<Map<String, dynamic>> putProfileGrants({
+    required ChatKeyMaterial keys,
+    required Map<String, dynamic> nonce,
+    required int keyEpoch,
+    required List<TkmProfileGrant> grants,
+  }) async {
+    final request = await TkmChatProfileRequests.buildPutProfileGrantsRequest(
+      keys: keys,
+      nonceResponse: nonce,
+      keyEpoch: keyEpoch,
+      grants: grants,
+    );
+    return await _requestResponse(
+          ChatServerEndpoints.putProfileGrants,
+          request,
+        ) ??
+        {};
+  }
+
+  Future<Map<String, dynamic>> clearUserProfile({
+    required ChatKeyMaterial keys,
+    required Map<String, dynamic> nonce,
+  }) async {
+    final request = await TkmChatProfileRequests.buildClearUserProfileRequest(
+      keys: keys,
+      nonceResponse: nonce,
+    );
+    return await _requestResponse(
+          ChatServerEndpoints.clearUserProfile,
+          request,
+        ) ??
+        {};
+  }
+
+  Future<Map<String, dynamic>> getUserProfile({
+    required ChatKeyMaterial keys,
+  }) async {
+    final request = await TkmChatProfileRequests.buildGetUserProfileRequest(
+      keys: keys,
+    );
+    return await _requestResponse(
+          ChatServerEndpoints.getUserProfile,
+          request,
+        ) ??
+        {};
+  }
+
+  Future<Map<String, dynamic>> getUserProfilePeer({
+    required ChatKeyMaterial keys,
+    required String targetPublicKey,
+    String? knownBlobHash,
+  }) async {
+    final request =
+        await TkmChatProfileRequests.buildGetUserProfilePeerRequest(
+      keys: keys,
+      targetPublicKey: targetPublicKey,
+      knownBlobHash: knownBlobHash,
+    );
+    return await _requestResponse(
+          ChatServerEndpoints.getUserProfilePeer,
+          request,
+        ) ??
+        {};
+  }
+
+  Future<List<TkmProfileDigest>> getProfileDigests({
+    required ChatKeyMaterial keys,
+    required List<String> targetPublicKeys,
+  }) async {
+    final request = await TkmChatProfileRequests.buildGetProfileDigestsRequest(
+      keys: keys,
+      targetPublicKeys: targetPublicKeys,
+    );
+    final response = await _requestResponse(
+          ChatServerEndpoints.getProfileDigests,
+          request,
+        ) ??
+        {};
+    final digestsRaw = response['digests'];
+    if (digestsRaw is! List) return const [];
+    return digestsRaw
+        .whereType<Map>()
+        .map((e) => TkmProfileDigest.fromJson(Map<String, dynamic>.from(e)))
+        .toList();
   }
 
   Future<void> disconnect() => _client.disconnect();

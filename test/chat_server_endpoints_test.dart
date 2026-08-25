@@ -30,6 +30,12 @@ void main() {
       ChatServerEndpoints.retrieveReadReceipts,
       ChatServerEndpoints.typingSubscribe,
       ChatServerEndpoints.typingEmit,
+      ChatServerEndpoints.setUserProfile,
+      ChatServerEndpoints.putProfileGrants,
+      ChatServerEndpoints.clearUserProfile,
+      ChatServerEndpoints.getUserProfile,
+      ChatServerEndpoints.getUserProfilePeer,
+      ChatServerEndpoints.getProfileDigests,
     ];
 
     for (final route in routes) {
@@ -64,5 +70,14 @@ void main() {
   test('FCM delete routes match fcm_token_delete_api guide', () {
     expect(ChatServerEndpoints.deleteFcmToken, 'deletefcmtoken');
     expect(ChatServerEndpoints.deleteAllFcmTokens, 'deleteallfcmtokens');
+  });
+
+  test('profile channel routes match profile-integration-protocol', () {
+    expect(ChatServerEndpoints.setUserProfile, 'setuserprofile');
+    expect(ChatServerEndpoints.putProfileGrants, 'putprofilegrants');
+    expect(ChatServerEndpoints.clearUserProfile, 'clearuserprofile');
+    expect(ChatServerEndpoints.getUserProfile, 'getuserprofile');
+    expect(ChatServerEndpoints.getUserProfilePeer, 'getuserprofilepeer');
+    expect(ChatServerEndpoints.getProfileDigests, 'getprofiledigests');
   });
 }
