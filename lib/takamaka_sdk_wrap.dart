@@ -17,11 +17,16 @@ export 'crypto/tkm_chat_attachment.dart';
 export 'crypto/tkm_chat_inbound_envelope.dart';
 export 'crypto/tkm_chat_delete_honor.dart';
 export 'crypto/tkm_chat_peer_read_cursor.dart';
+export 'crypto/tkm_chat_profile_crypto.dart';
+export 'crypto/tkm_chat_profile_avatar_encoder.dart';
+export 'crypto/tkm_chat_profile_requests.dart';
+export 'crypto/tkm_chat_profile_client.dart';
 export 'constants/chat_message_types.dart';
 export 'crypto/tkm_chat_manifest_limits.dart';
 export 'models/chat/stream_encrypted_descriptor.dart';
 export 'models/chat/upload_status_bean.dart';
 export 'models/chat/tkm_delete_message_response.dart';
+export 'models/chat/tkm_chat_profile_models.dart';
 export 'constants/chat_server_endpoints.dart';
 
 export 'tkm_utility.dart';
