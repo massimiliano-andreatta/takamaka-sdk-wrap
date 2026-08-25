@@ -8,6 +8,10 @@ import 'package:takamaka_sdk_wrap/models/chat/stream_encrypted_descriptor.dart';
 import 'package:takamaka_sdk_wrap/utils/tkm_base64_url.dart';
 
 /// Streaming AES-GCM encryption for rschat attachments (Java TkmEncryptionUtils).
+///
+/// [StreamEncryptedDescriptor.encryptedContentHash] is SHA3-256 of the ciphertext
+/// **bytes** (DR-030), not of the base64 wire text. [StreamEncryptionResult.encryptedData]
+/// remains UTF-8 of standard base64; placeholder `size` stays that encoded length.
 class TkmChatStreamEncryption {
   TkmChatStreamEncryption._();
 
@@ -51,9 +55,11 @@ class TkmChatStreamEncryption {
     );
     final ciphertext = cipher.process(plaintext);
 
+    // DR-030: hash ciphertext BYTES, not the base64 wire text (wrapping/alphabet
+    // must not affect attachment identity). Wire body stays standard base64 UTF-8.
+    final encryptedHashHex = computeHashHex(ciphertext);
     final base64Encoded =
         Uint8List.fromList(utf8.encode(base64.encode(ciphertext)));
-    final encryptedHashHex = computeHashHex(base64Encoded);
 
     final descriptor = StreamEncryptedDescriptor.standard(
       salt: salt,
@@ -90,18 +96,22 @@ class TkmChatStreamEncryption {
     required Uint8List encryptedData,
     String? expectedPlaintextHashHex,
   }) {
-    final actualEncHashHex = computeHashHex(encryptedData);
+    // DR-030: decode first, then hash ciphertext BYTES (parity rsclient
+    // stream_encryption + Java Base64InputStream leniency).
+    final ciphertext = decodeWireBody(encryptedData);
+
+    final actualEncHashHex = computeHashHex(ciphertext);
     if (descriptor.encryptedContentHash != null &&
         descriptor.encryptedContentHash != actualEncHashHex) {
+      final legacyWireHex = computeHashHex(encryptedData);
+      final preDr030 = descriptor.encryptedContentHash == legacyWireHex;
       throw StateError(
         'Encrypted content hash mismatch: expected '
-        '${descriptor.encryptedContentHash}, got $actualEncHashHex',
+        '${descriptor.encryptedContentHash}, got $actualEncHashHex'
+        '${preDr030 ? ' — PRE-DR-030 attachment: declared hash is SHA3-256 of '
+            'the base64 WIRE TEXT (not tampering; no remediation)' : ''}',
       );
     }
-
-    final base64String =
-        utf8.decode(encryptedData).replaceAll(RegExp(r'\s'), '');
-    final ciphertext = base64.decode(base64String);
 
     final saltBytes = _hexToBytes(descriptor.salt);
     final iv = _hexToBytes(descriptor.iv);
@@ -122,7 +132,7 @@ class TkmChatStreamEncryption {
         Uint8List(0),
       ),
     );
-    final plaintext = cipher.process(Uint8List.fromList(ciphertext));
+    final plaintext = cipher.process(ciphertext);
 
     if (expectedPlaintextHashHex != null) {
       final actualPlainHashHex = computeHashHex(plaintext);
@@ -135,6 +145,34 @@ class TkmChatStreamEncryption {
     }
 
     return plaintext;
+  }
+
+  /// Decodes a received wire body as leniently as Java Commons Base64InputStream.
+  ///
+  /// Strips non-alphabet chars (CRLF, spaces, `=` / `.` padding), drops an
+  /// incomplete final quantum, re-derives `=` padding. Identity is the DR-030
+  /// hash over the decoded bytes — not this decoding step.
+  static Uint8List decodeWireBody(Uint8List encryptedData) {
+    final raw = utf8.decode(encryptedData, allowMalformed: true);
+    final buf = StringBuffer();
+    for (final c in raw.codeUnits) {
+      final isAlphabet = (c >= 0x41 && c <= 0x5A) ||
+          (c >= 0x61 && c <= 0x7A) ||
+          (c >= 0x30 && c <= 0x39) ||
+          c == 0x2B ||
+          c == 0x2F ||
+          c == 0x2D ||
+          c == 0x5F;
+      if (isAlphabet) buf.writeCharCode(c);
+    }
+    var s = buf.toString();
+    final remainder = s.length % 4;
+    if (remainder == 1) {
+      s = s.substring(0, s.length - 1);
+    } else if (remainder != 0) {
+      s = s.padRight(s.length + (4 - remainder), '=');
+    }
+    return Uint8List.fromList(base64.decode(s));
   }
 
   static String computeHashHex(Uint8List data) {
