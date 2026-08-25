@@ -17,6 +17,7 @@
         "exif",
         "flutter",
         "flutter_pretty_dio_logger",
+        "image",
         "io_takamaka_core_wallet",
         "jcs_dart",
         "metadata_god",
@@ -65,6 +66,15 @@
         "stream_channel",
         "test_api",
         "vector_math"
+      ]
+    },
+    {
+      "name": "image",
+      "version": "4.3.0",
+      "dependencies": [
+        "archive",
+        "meta",
+        "xml"
       ]
     },
     {
@@ -359,6 +369,23 @@
       ]
     },
     {
+      "name": "xml",
+      "version": "6.5.0",
+      "dependencies": [
+        "collection",
+        "meta",
+        "petitparser"
+      ]
+    },
+    {
+      "name": "archive",
+      "version": "3.6.1",
+      "dependencies": [
+        "crypto",
+        "path"
+      ]
+    },
+    {
       "name": "qr",
       "version": "3.0.2",
       "dependencies": [
@@ -619,15 +646,6 @@
       ]
     },
     {
-      "name": "image",
-      "version": "4.3.0",
-      "dependencies": [
-        "archive",
-        "meta",
-        "xml"
-      ]
-    },
-    {
       "name": "hex",
       "version": "0.2.0",
       "dependencies": []
@@ -642,14 +660,6 @@
       "version": "0.0.2",
       "dependencies": [
         "flutter"
-      ]
-    },
-    {
-      "name": "archive",
-      "version": "3.6.1",
-      "dependencies": [
-        "crypto",
-        "path"
       ]
     },
     {
@@ -740,6 +750,14 @@
       "dependencies": [
         "source_span",
         "string_scanner"
+      ]
+    },
+    {
+      "name": "petitparser",
+      "version": "6.1.0",
+      "dependencies": [
+        "collection",
+        "meta"
       ]
     },
     {
@@ -1041,15 +1059,6 @@
       ]
     },
     {
-      "name": "xml",
-      "version": "6.5.0",
-      "dependencies": [
-        "collection",
-        "meta",
-        "petitparser"
-      ]
-    },
-    {
       "name": "tuple",
       "version": "2.0.2",
       "dependencies": []
@@ -1110,14 +1119,6 @@
       "name": "_fe_analyzer_shared",
       "version": "91.0.0",
       "dependencies": [
-        "meta"
-      ]
-    },
-    {
-      "name": "petitparser",
-      "version": "6.1.0",
-      "dependencies": [
-        "collection",
         "meta"
       ]
     }

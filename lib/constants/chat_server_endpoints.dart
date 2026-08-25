@@ -45,4 +45,12 @@ abstract final class ChatServerEndpoints {
 
   /// Plain fire-and-forget typing emit (`{conv, pv}` — no `from`).
   static const String typingEmit = 'typingemit';
+
+  /// User profile channel (profile-integration-protocol.md).
+  static const String setUserProfile = 'setuserprofile';
+  static const String putProfileGrants = 'putprofilegrants';
+  static const String clearUserProfile = 'clearuserprofile';
+  static const String getUserProfile = 'getuserprofile';
+  static const String getUserProfilePeer = 'getuserprofilepeer';
+  static const String getProfileDigests = 'getprofiledigests';
 }

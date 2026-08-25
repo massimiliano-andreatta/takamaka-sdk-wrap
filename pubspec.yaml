@@ -36,6 +36,8 @@ dependencies:
     git:
       url: https://github.com/aps-lab/jcs_dart.git
       ref: 0.10.0
+  # Avatar re-encode for user-profile channel (JPEG quality ladder).
+  image: ^4.3.0
 
 dev_dependencies:
   flutter_test:
