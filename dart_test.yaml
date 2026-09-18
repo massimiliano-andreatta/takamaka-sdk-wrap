@@ -1,0 +1,5 @@
+# Integration tests need network; skipped in default `flutter test`.
+# Run: flutter test test/integration/rschat_smoke_integration_test.dart --run-skipped
+tags:
+  integration:
+    skip: "Requires live rschat WebSocket — run with --run-skipped (see dart_test.yaml)"
